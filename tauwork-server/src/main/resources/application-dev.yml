@@ -1,9 +1,11 @@
 spring:
+  config:
+    import: 'optional:file:./application-local.yml'  # 本地敏感配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/tauwork_platform?useUnicode=true&characterEncoding=utf8&connectionCollation=utf8mb4_general_ci&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: Admin@2026
+    password: change-me  # 本地密码请勿提交，真实配置放 application-local.yml（已被 .gitignore 排除）
   flyway:
     enabled: true
     locations: classpath:db/migration
