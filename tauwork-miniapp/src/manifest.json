@@ -1,0 +1,17 @@
+{
+  "name": "九千善",
+  "appid": "",
+  "description": "跨境创业一站式服务平台",
+  "versionName": "0.4.0",
+  "versionCode": "4",
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "vueVersion": "3"
+}

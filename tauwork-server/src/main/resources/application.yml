@@ -1,0 +1,63 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: tauwork-server
+  profiles:
+    active: dev
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 40MB
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  global-config:
+    banner: false
+    db-config:
+      id-type: assign_id
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+
+sa-token:
+  token-name: Authorization
+  timeout: 259200   # 3天
+  active-timeout: -1
+  is-concurrent: true
+  token-style: uuid
+  is-log: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /doc.html
+    operations-sorter: order
+
+logging:
+  level:
+    com.abos.server: debug
+
+# 小程序与微信支付（dev 留空走 mock 登录/模拟支付；正式环境在 prod 覆盖）
+wx:
+  mini:
+    appid: ""          # 小程序 AppID（空=mock 登录）
+    secret: ""
+  pay:
+    enabled: false     # true 且六项配齐才启用真实微信支付V3
+    appid: ""
+    mchid: ""
+    serial: ""
+    private-key-path: ""
+    api-v3-key: ""
+    notify-url: ""     # 如 https://api.xxx.com/api/pay/notify/wx
