@@ -12,6 +12,9 @@
       <view class="mitem" @tap="go('/pages/me/bookings')">
         <text class="mic">📋</text><text>我的预订</text><text class="arrow">›</text>
       </view>
+      <view class="mitem" @tap="go('/pages/me/family')">
+        <text class="mic">👨‍👩‍👧</text><text>家庭档案</text><text class="arrow">›</text>
+      </view>
       <view class="mitem" @tap="reLogin">
         <text class="mic">🔄</text><text>重新登录（切换身份）</text><text class="arrow">›</text>
       </view>

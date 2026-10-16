@@ -24,6 +24,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                         "/api/mini/cms/**",
                         "/api/mini/svc/**",
                         "/api/mini/space/**",
+                        "/api/mini/assess/**",
                         "/api/pay/notify/**",
                         "/v3/api-docs/**",
                         "/doc.html",

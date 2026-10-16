@@ -9,7 +9,10 @@
     { "path": "pages/space/detail", "style": { "navigationBarTitleText": "场地详情" } },
     { "path": "pages/me/bookings", "style": { "navigationBarTitleText": "我的预订" } },
     { "path": "pages/news/news", "style": { "navigationBarTitleText": "公告资讯" } },
-    { "path": "pages/news/detail", "style": { "navigationBarTitleText": "资讯详情" } }
+    { "path": "pages/news/detail", "style": { "navigationBarTitleText": "资讯详情" } },
+    { "path": "pages/assess/assess", "style": { "navigationBarTitleText": "智能评估" } },
+    { "path": "pages/assess/result", "style": { "navigationBarTitleText": "评估报告" } },
+    { "path": "pages/me/family", "style": { "navigationBarTitleText": "家庭档案" } }
   ],
   "globalStyle": {
     "navigationBarBackgroundColor": "#16355E",

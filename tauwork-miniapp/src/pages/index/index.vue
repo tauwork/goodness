@@ -80,7 +80,7 @@ export default {
       banners: [], stories: [], news: [], communities: [],
       cur: 0,
       quicks: [
-        { icon: '评', label: '智能评估', url: '/pages/svc/svc', bg: '#E8F5EE', color: '#2FA36B' },
+        { icon: '评', label: '智能评估', url: '/pages/assess/assess', bg: '#E8F5EE', color: '#2FA36B' },
         { icon: '订', label: '订空间', url: '/pages/space/space', bg: '#F7F1E2', color: '#A8853F' },
         { icon: '服', label: '全部服务', url: '/pages/svc/svc', bg: '#EDF2F9', color: '#16355E' },
         { icon: '码', label: '我的预订', url: '/pages/me/bookings', bg: '#F0EDF8', color: '#5B4C9E' }
@@ -105,8 +105,8 @@ export default {
       return map[style] || map.NAVY
     },
     onBanner(b) {
-      if (b.linkType === 'SVC') uni.navigateTo({ url: '/pages/svc/svc' })
-      else if (b.linkType === 'ASSESS') uni.navigateTo({ url: '/pages/svc/svc' })
+      if (b.linkType === 'ASSESS') uni.navigateTo({ url: '/pages/assess/assess' })
+      else if (b.linkType === 'SVC') uni.navigateTo({ url: `/pages/svc/detail?id=${b.linkTarget}` })
     }
   }
 }

@@ -72,5 +72,6 @@ export default {
   get: (url, data, auth) => request('GET', url, data, auth),
   post: (url, data, auth = true) => request('POST', url, data, auth),
   put: (url, data, auth = true) => request('PUT', url, data, auth),
+  delete: (url, auth = true) => request('DELETE', url, undefined, auth),
   ensureLogin
 }
