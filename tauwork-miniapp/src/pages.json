@@ -12,7 +12,8 @@
     { "path": "pages/news/detail", "style": { "navigationBarTitleText": "资讯详情" } },
     { "path": "pages/assess/assess", "style": { "navigationBarTitleText": "智能评估" } },
     { "path": "pages/assess/result", "style": { "navigationBarTitleText": "评估报告" } },
-    { "path": "pages/me/family", "style": { "navigationBarTitleText": "家庭档案" } }
+    { "path": "pages/me/family", "style": { "navigationBarTitleText": "家庭档案" } },
+    { "path": "pages/me/phone", "style": { "navigationBarTitleText": "绑定手机号" } }
   ],
   "globalStyle": {
     "navigationBarBackgroundColor": "#16355E",

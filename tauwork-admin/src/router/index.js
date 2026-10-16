@@ -10,6 +10,7 @@ const routes = [
       { path: 'dashboard', component: () => import('../views/dashboard.vue'), meta: { title: '经营驾驶舱' } },
       { path: 'bookings', component: () => import('../views/bookings.vue'), meta: { title: '空间预订订单' } },
       { path: 'svcbookings', component: () => import('../views/svcbookings.vue'), meta: { title: '服务咨询预约' } },
+      { path: 'leads', component: () => import('../views/leads.vue'), meta: { title: '线索池' } },
       { path: 'products', component: () => import('../views/products.vue'), meta: { title: '产品管理' } },
       { path: 'communities', component: () => import('../views/communities.vue'), meta: { title: '社区店管理' } },
       { path: 'cms', component: () => import('../views/cms.vue'), meta: { title: '内容管理' } }

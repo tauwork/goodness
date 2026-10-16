@@ -9,6 +9,8 @@
                active-text-color="#fff" class="menu">
         <div class="grp">经营总览</div>
         <el-menu-item index="/dashboard">经营驾驶舱</el-menu-item>
+        <div class="grp">客户与转化</div>
+        <el-menu-item index="/leads">线索池</el-menu-item>
         <div class="grp">预约与空间</div>
         <el-menu-item index="/svcbookings">服务咨询预约</el-menu-item>
         <el-menu-item index="/bookings">空间预订订单</el-menu-item>
