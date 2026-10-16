@@ -19,7 +19,7 @@ public class StpInterfaceImpl implements StpInterface {
 
     private static final Map<String, List<String>> ROLE_PERMS = Map.of(
             "ADMIN", List.of("*"),
-            "DIRECTOR", List.of("product:manage", "cms:manage", "space:manage"),
+            "DIRECTOR", List.of("product:manage", "cms:manage", "space:manage", "booking:manage"),
             "CONSULTANT", List.of(),
             "CASE_OPS", List.of("space:manage"),
             "FINANCE", List.of(),

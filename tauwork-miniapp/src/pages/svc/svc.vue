@@ -7,13 +7,12 @@
             @tap="pick(c.id)">{{ c.name }}</view>
     </view>
 
-    <view class="card" v-for="p in list" :key="p.id">
+    <view class="card" v-for="p in list" :key="p.id" @tap="go(p.id)">
       <view class="name">{{ p.name }}</view>
       <view class="sub" style="margin:8rpx 0 16rpx">{{ p.subtitle }}</view>
       <view class="foot">
-        <text class="price" v-if="p.priceValue">¥{{ p.priceValue }} 起</text>
-        <text class="quote" v-else>评估后报价</text>
-        <text class="ask" @tap="callAsk">预约咨询 ›</text>
+        <text class="price">¥{{ p.priceValue }}<text v-if="p.priceMode==='STAGED'"> 起</text></text>
+        <text class="ask">查看详情 ›</text>
       </view>
     </view>
   </view>
@@ -38,13 +37,7 @@ export default {
     load() {
       api.get('/api/mini/svc/product', { categoryId: this.catId || undefined }).then(d => this.list = d)
     },
-    callAsk() {
-      uni.showModal({
-        title: '预约咨询',
-        content: '顾问将在 1 小时内与您联系确认（V0.5 上线在线预约表单）',
-        showCancel: false
-      })
-    }
+    go(id) { uni.navigateTo({ url: `/pages/svc/detail?id=${id}` }) }
   }
 }
 </script>
