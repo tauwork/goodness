@@ -5,10 +5,17 @@ function request(method, url, data, needAuth) {
     if (needAuth && !uni.getStorageSync('token')) {
       return ensureLogin().then(() => request(method, url, data, needAuth)).then(resolve).catch(reject)
     }
+    // 过滤值为 undefined/null 的参数，避免拼成 "key=undefined" 字符串打挂后端
+    const clean = {}
+    if (data) {
+      for (const k of Object.keys(data)) {
+        if (data[k] !== undefined && data[k] !== null) clean[k] = data[k]
+      }
+    }
     uni.request({
       url: BASE + url,
       method,
-      data,
+      data: clean,
       header: { Authorization: uni.getStorageSync('token') || '' },
       success: res => {
         const body = res.data

@@ -44,6 +44,12 @@ public class GlobalExceptionHandler {
         return Result.fail(ErrorCode.BAD_REQUEST.getCode(), msg);
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public Result<Void> handleTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e) {
+        log.warn("参数类型错误: {}={}", e.getName(), e.getValue());
+        return Result.fail(ErrorCode.BAD_REQUEST.getCode(), "参数格式错误: " + e.getName());
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleOther(Exception e) {
