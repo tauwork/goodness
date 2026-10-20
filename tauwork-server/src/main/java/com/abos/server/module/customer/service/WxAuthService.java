@@ -2,11 +2,16 @@ package com.abos.server.module.customer.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.abos.server.common.enums.ErrorCode;
+import com.abos.server.common.exception.BizException;
 import com.abos.server.module.customer.entity.Customer;
 import com.abos.server.module.customer.mapper.CustomerMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
@@ -25,6 +30,7 @@ public class WxAuthService {
 
     private final CustomerMapper customerMapper;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${wx.mini.appid:}")
     private String appid;
@@ -51,7 +57,7 @@ public class WxAuthService {
         if (customer == null) {
             customer = new Customer();
             customer.setWxOpenid(openid);
-            customer.setStage("NEW");
+            customer.setStage(Customer.STAGE_POOL);
             customer.setSource("OTHER");
             customerMapper.insert(customer);
             log.info("新小程序客户注册: openid={}, mock={}", openid, mock);
@@ -64,12 +70,28 @@ public class WxAuthService {
     private String code2session(String code) {
         String url = "https://api.weixin.qq.com/sns/jscode2session?appid=" + appid
                 + "&secret=" + secret + "&js_code=" + code + "&grant_type=authorization_code";
-        @SuppressWarnings("unchecked")
-        Map<String, Object> resp = restTemplate.getForObject(url, Map.class);
-        if (resp == null || resp.containsKey("errcode") && !Integer.valueOf(0).equals(resp.get("errcode"))) {
-            log.error("code2session 失败: {}", resp);
-            throw new IllegalStateException("微信登录失败: " + (resp == null ? "空响应" : resp.get("errmsg")));
+        // 微信该接口的 Content-Type 是 text/plain，不能按 JSON 媒体类型直接反序列化
+        ResponseEntity<String> entity = restTemplate.getForEntity(url, String.class);
+        String raw = entity.getBody();
+        if (!StringUtils.hasText(raw)) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "微信登录失败: 空响应");
         }
-        return (String) resp.get("openid");
+        Map<String, Object> resp;
+        try {
+            resp = objectMapper.readValue(raw, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("code2session 响应无法解析");
+            throw new BizException(ErrorCode.OPERATION_FAILED, "微信登录失败");
+        }
+        Object err = resp.get("errcode");
+        if (err != null && !"0".equals(String.valueOf(err))) {
+            log.error("code2session 失败: errcode={}, errmsg={}", err, resp.get("errmsg"));
+            throw new BizException(ErrorCode.OPERATION_FAILED, "微信登录失败: " + resp.get("errmsg"));
+        }
+        Object openid = resp.get("openid");
+        if (openid == null || !StringUtils.hasText(openid.toString())) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "微信登录失败: 未返回身份");
+        }
+        return openid.toString();
     }
 }

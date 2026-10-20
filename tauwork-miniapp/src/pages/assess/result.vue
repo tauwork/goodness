@@ -1,34 +1,45 @@
 <template>
   <view class="page" v-if="r">
-    <view class="ring-wrap">
-      <view class="ring">
-        <view class="rin">
-          <text class="rscore">{{ r.score }}</text>
-          <text class="rlabel">综合适配度</text>
+    <view class="score">
+      <image class="score-img" src="/static/visual/harbor.jpg" mode="aspectFill" />
+      <view class="score-shade"></view>
+      <view class="score-copy">
+        <text class="score-en">FIT</text>
+        <text class="score-num">{{ r.score }}</text>
+        <text class="score-label">综合适配度</text>
+      </view>
+    </view>
+
+    <view class="block">
+      <text class="kicker">PATHS</text>
+      <text class="block-title">建议路径</text>
+    </view>
+    <view class="rec" v-for="(rec, i) in r.recommends" :key="rec.code" @tap="go(rec)">
+      <image class="rec-img" :src="imageOf(rec)" mode="aspectFill" />
+      <view class="rec-body">
+        <text v-if="i === 0" class="best">优先考虑</text>
+        <view class="rname">{{ rec.name }}</view>
+        <view class="rfoot">
+          <text class="rfit">适配 {{ rec.fit }}%</text>
+          <text class="go">查看</text>
         </view>
       </view>
     </view>
 
-    <view class="card rec" v-for="(rec, i) in r.recommends" :key="rec.code" @tap="go(rec)">
-      <view class="rh">
-        <text v-if="i === 0" class="best">最优推荐</text>
-        <text class="rname">{{ rec.name }}</text>
-        <text class="rfit">{{ rec.fit }}%</text>
-      </view>
-      <text class="go">查看服务详情并预约顾问解读 ›</text>
-    </view>
-
     <view class="card">
-      <view class="ft">下一步建议</view>
-      <view class="line">· 预约顾问一对一解读报告（首次免费）</view>
-      <view class="line">· 同步评估孩子入学路径与插班时间窗</view>
-      <view class="line">· 完善家庭档案，获取更精准的路径方案</view>
+      <view class="kicker">NEXT</view>
+      <view class="ft">接下来可以做</view>
+      <view class="line">预约顾问，一对一解读这份报告。首次免费。</view>
+      <view class="line">同时看孩子的入学路径和插班时间。</view>
+      <view class="line">补全家庭档案，路径会更准。</view>
     </view>
-    <view style="height:40rpx"></view>
+    <view style="height: 24rpx"></view>
   </view>
 </template>
 
 <script>
+import { serviceImage } from '../../utils/visual'
+
 export default {
   data() {
     return { r: null }
@@ -38,6 +49,7 @@ export default {
     if (raw) this.r = JSON.parse(raw)
   },
   methods: {
+    imageOf(rec) { return serviceImage(rec) },
     go(rec) {
       if (rec.productId) uni.navigateTo({ url: `/pages/svc/detail?id=${rec.productId}` })
     }
@@ -46,20 +58,23 @@ export default {
 </script>
 
 <style scoped>
-.ring-wrap { display: flex; justify-content: center; padding: 48rpx 0 32rpx; }
-.ring { width: 236rpx; height: 236rpx; border-radius: 50%;
-  background: conic-gradient(#C2A05F 0deg, #C2A05F calc(var(--p, 100% * 1deg)), #E9EDF4 0deg);
-  display: flex; align-items: center; justify-content: center; }
-.rin { width: 184rpx; height: 184rpx; border-radius: 50%; background: #fff;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.rscore { font-size: 60rpx; font-weight: 700; color: #16355E; }
-.rlabel { font-size: 20rpx; color: #8A94A8; }
-.rec { border: 2rpx solid #C2A05F; background: #FFFDF7; }
-.rh { display: flex; align-items: center; gap: 14rpx; }
-.best { font-size: 20rpx; color: #A8853F; background: #C2A05F; border-radius: 8rpx; padding: 4rpx 14rpx; color: #fff; }
-.rname { flex: 1; font-size: 30rpx; font-weight: 600; }
-.rfit { color: #A8853F; font-weight: 700; font-size: 28rpx; }
-.go { display: block; margin-top: 14rpx; font-size: 22rpx; color: #16355E; }
-.ft { font-size: 28rpx; font-weight: 600; margin-bottom: 14rpx; }
-.line { font-size: 24rpx; color: #3A4658; line-height: 2; }
+.score { position: relative; height: 460rpx; }
+.score-img, .score-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.score-shade { background: linear-gradient(180deg, rgba(16,14,12,.15), rgba(16,14,12,.62)); }
+.score-copy { position: absolute; left: 0; right: 0; bottom: 48rpx; text-align: center; color: #fff; }
+.score-en { display: block; letter-spacing: 6rpx; font-size: 20rpx; color: #E7D3AE; }
+.score-num { display: block; font-size: 96rpx; font-weight: 500; line-height: 1.1; margin-top: 8rpx; }
+.score-label { display: block; font-size: 24rpx; color: rgba(255,255,255,.8); }
+.block { padding: 32rpx 36rpx 12rpx; }
+.block-title { display: block; font-size: 36rpx; font-weight: 500; margin-top: 6rpx; }
+.rec { margin: 0 28rpx 20rpx; background: #FFFcf8; border-radius: 24rpx; overflow: hidden; border: 1rpx solid rgba(28,25,21,.06); }
+.rec-img { width: 100%; height: 220rpx; display: block; }
+.rec-body { padding: 22rpx 28rpx 24rpx; }
+.best { font-size: 20rpx; color: #1C1915; background: #E7D3AE; border-radius: 999rpx; padding: 4rpx 14rpx; }
+.rname { font-size: 32rpx; font-weight: 500; margin-top: 10rpx; }
+.rfoot { display: flex; align-items: center; margin-top: 12rpx; }
+.rfit { color: #8C6A3D; font-size: 26rpx; flex: 1; }
+.go { color: #1C1915; font-size: 24rpx; }
+.ft { font-size: 30rpx; margin: 12rpx 0 8rpx; }
+.line { font-size: 26rpx; color: #4A433C; line-height: 1.7; padding: 8rpx 0; }
 </style>

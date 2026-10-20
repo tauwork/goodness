@@ -1,5 +1,6 @@
 package com.abos.server.module.customer.service;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.abos.server.common.enums.ErrorCode;
 import com.abos.server.common.exception.BizException;
@@ -53,8 +54,12 @@ public class PhoneBindService {
         }
     }
 
-    /** 校验并绑定手机号（同手机号已有其他客户绑定时拒绝） */
-    public void bind(Long customerId, String phone, String code) {
+    /**
+     * 校验并绑定手机号。手机号是客户唯一标识：
+     * 已有档案时，把当前微信并入那份档案，并换发登录态。
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public Customer bind(Long customerId, String phone, String code) {
         CodeEntry entry = codeCache.get(phone);
         if (entry == null || entry.expiresAt() < System.currentTimeMillis()) {
             throw new BizException(ErrorCode.OPERATION_FAILED, "验证码已过期，请重新获取");
@@ -62,18 +67,32 @@ public class PhoneBindService {
         if (!entry.code().equals(code)) {
             throw new BizException(ErrorCode.OPERATION_FAILED, "验证码错误");
         }
-        Long dup = customerMapper.selectCount(Wrappers.<Customer>lambdaQuery()
-                .eq(Customer::getPhone, phone));
-        if (dup != null && dup > 0) {
-            throw new BizException(ErrorCode.OPERATION_FAILED, "该手机号已绑定其他账号，请联系客服");
+        Customer current = customerMapper.selectById(customerId);
+        if (current == null) throw new BizException(ErrorCode.CUSTOMER_NOT_FOUND);
+        Customer existing = customerMapper.selectOne(Wrappers.<Customer>lambdaQuery().eq(Customer::getPhone, phone));
+        if (existing != null && !existing.getId().equals(current.getId())) {
+            if (Customer.STAGE_BLACKLIST.equals(existing.getStage())) {
+                throw new BizException(ErrorCode.OPERATION_FAILED, "该手机号已在黑名单，请联系客服");
+            }
+            String openid = current.getWxOpenid();
+            customerMapper.deleteById(current.getId());
+            existing.setWxOpenid(openid);
+            customerMapper.updateById(existing);
+            StpUtil.logout();
+            StpUtil.login("C" + existing.getId());
+            codeCache.remove(phone);
+            log.info("手机号尾号{}并入已有客户{}", phone.substring(7), existing.getId());
+            return existing;
         }
-        Customer c = customerMapper.selectById(customerId);
-        if (c == null) throw new BizException(ErrorCode.CUSTOMER_NOT_FOUND);
-        c.setPhone(phone);
-        c.setPhoneHash(org.springframework.util.DigestUtils.md5DigestAsHex(phone.getBytes()));
-        customerMapper.updateById(c);
+        current.setPhone(phone);
+        current.setPhoneHash(org.springframework.util.DigestUtils.md5DigestAsHex(phone.getBytes()));
+        if (!StringUtils.hasText(current.getStage()) || "NEW".equals(current.getStage())) {
+            current.setStage(Customer.STAGE_POOL);
+        }
+        customerMapper.updateById(current);
         codeCache.remove(phone);
         log.info("客户{}绑定手机号尾号{}", customerId, phone.substring(7));
+        return current;
     }
 
     private void sendSms(String phone, String code) {

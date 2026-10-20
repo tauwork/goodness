@@ -1,25 +1,33 @@
 <template>
-  <view class="page" v-if="p">
-    <view class="card">
-      <view class="name">{{ p.name }} <text class="tag">{{ p.categoryName }}</text></view>
-      <view class="sub" style="margin:8rpx 0 16rpx">{{ p.subtitle }}</view>
+  <view class="page sink" v-if="p">
+    <view class="hero">
+      <image class="hero-img" :src="image" mode="aspectFill" />
+      <view class="hero-shade"></view>
+      <view class="hero-copy">
+        <text class="hero-en">{{ en }}</text>
+        <view class="hero-name">{{ p.name }}</view>
+        <view class="hero-sub">{{ p.subtitle }}</view>
+      </view>
+    </view>
+
+    <view class="card sheet">
       <view class="attrs">
         <text class="tag" v-for="(v, k) in attrsList" :key="k">{{ v }}</text>
       </view>
-      <view class="price">¥{{ p.price }} <text class="unit">/{{ unitText(p.priceUnit) }}</text></view>
+      <view class="price">¥{{ p.price }} <text class="unit">/ {{ unitText(p.priceUnit) }}</text></view>
     </view>
 
-    <!-- 预订信息 -->
     <view class="card">
+      <view class="kicker">RESERVE</view>
       <view class="form-title" v-if="isHour">开始时间</view>
       <picker v-if="isHour" mode="time" :value="form.startTime" @change="e => form.startTime = e.detail.value">
         <view class="picker">{{ form.startTime || '选择开始时间' }}</view>
       </picker>
-      <view class="form-title" v-if="isHour">时长（小时）</view>
+      <view class="form-title" v-if="isHour">时长</view>
       <view class="hours" v-if="isHour">
-        <view v-for="h in [1,2,3,4]" :key="h" class="hbtn" :class="{ on: form.hours === h }" @tap="form.hours = h">{{ h }}h</view>
+        <view v-for="h in [1,2,3,4]" :key="h" class="hbtn" :class="{ on: form.hours === h }" @tap="form.hours = h">{{ h }} 小时</view>
       </view>
-      <view class="form-title" v-else>数量（{{ unitText(p.priceUnit) }}）</view>
+      <view class="form-title" v-else>数量 · {{ unitText(p.priceUnit) }}</view>
       <view class="hours" v-if="!isHour">
         <view v-for="q in [1,2,3]" :key="q" class="hbtn" :class="{ on: form.qty === q }" @tap="form.qty = q">{{ q }}</view>
       </view>
@@ -29,13 +37,11 @@
       </picker>
     </view>
 
-    <view class="amount card">
-      <text>预计费用</text>
-      <text class="price">¥{{ amount }}</text>
-    </view>
-
     <view class="paybar">
-      <view class="pamount">¥{{ amount }}</view>
+      <view>
+        <view class="plabel">预计费用</view>
+        <view class="pamount">¥{{ amount }}</view>
+      </view>
       <view class="btn-gold paybtn" @tap="submit">立即预订</view>
     </view>
   </view>
@@ -43,6 +49,7 @@
 
 <script>
 import api from '../../utils/request'
+import { spaceImage, lineEn } from '../../utils/visual'
 
 export default {
   data() {
@@ -54,6 +61,8 @@ export default {
   },
   computed: {
     isHour() { return this.p && this.p.priceUnit === 'HOUR' },
+    image() { return this.p ? spaceImage(this.p) : '' },
+    en() { return this.p ? lineEn(this.p.categoryCode, this.p.categoryName) : '' },
     amount() {
       if (!this.p) return 0
       const n = this.isHour ? this.form.hours : this.form.qty
@@ -81,12 +90,12 @@ export default {
   onLoad(q) {
     const d = new Date()
     this.today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    this.form.bookDate = this.today
-    // 从列表页带过来的产品对象或重新拉取
-    const ev = this.getOpenerEventChannel && this.getOpenerEventChannel()
+    this.form.bookDate = q.date || this.today
+    if (q.period === 'AM') this.form.startTime = '09:30'
+    if (q.period === 'PM') this.form.startTime = '14:00'
     api.get('/api/mini/space/community').then(list => {
       const seq = list.map(c => api.get(`/api/mini/space/community/${c.id}/product`))
-      return Promise.all(seq).then(arrs => arrs.flat().find(x => x.communityProductId === +q.cpid))
+      return Promise.all(seq).then(arrs => arrs.flat().find(x => String(x.communityProductId) === String(q.cpid)))
     }).then(p => { if (p) this.p = p })
   },
   methods: {
@@ -100,7 +109,6 @@ export default {
         hours: this.isHour ? this.form.hours : null,
         qty: this.isHour ? null : this.form.qty
       })
-      // mock 支付（正式环境 wx.requestOrderPayment(data.payParams)）
       await api.post(`/api/mini/booking/mock-pay/${data.orderNo}`)
       uni.showModal({
         title: '预订成功',
@@ -114,18 +122,22 @@ export default {
 </script>
 
 <style scoped>
-.name { font-size: 34rpx; font-weight: 600; }
-.attrs { margin: 10rpx 0; }
-.price { color: #A8853F; font-size: 36rpx; font-weight: 700; margin-top: 10rpx; }
+.hero { position: relative; height: 520rpx; }
+.hero-img, .hero-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.hero-shade { background: linear-gradient(180deg, rgba(16,14,12,0) 35%, rgba(16,14,12,.72) 100%); }
+.hero-copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 32rpx 36rpx 56rpx; color: #fff; }
+.hero-en { font-size: 20rpx; letter-spacing: 4rpx; color: #E7D3AE; }
+.hero-name { font-size: 44rpx; font-weight: 500; margin-top: 8rpx; }
+.hero-sub { font-size: 24rpx; color: rgba(255,255,255,.82); margin-top: 8rpx; line-height: 1.5; }
+.sheet { margin-top: -28rpx; position: relative; }
+.attrs { margin-bottom: 12rpx; }
+.price { color: #8C6A3D; font-size: 40rpx; font-weight: 600; }
 .unit { font-size: 22rpx; font-weight: 400; }
-.form-title { font-size: 26rpx; font-weight: 600; margin: 24rpx 0 14rpx; }
-.picker { background: #F4F6FA; border-radius: 14rpx; padding: 20rpx 24rpx; color: #22304A; font-size: 26rpx; }
-.hours { display: flex; gap: 16rpx; }
-.hbtn { border: 1rpx solid #E8ECF3; background: #fff; border-radius: 14rpx; padding: 14rpx 40rpx; font-size: 26rpx; }
-.hbtn.on { background: #16355E; color: #fff; border-color: #16355E; }
-.amount { display: flex; justify-content: space-between; align-items: center; font-size: 26rpx; color: #8A94A8; }
-.paybar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1rpx solid #E8ECF3;
-  display: flex; align-items: center; padding: 20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom)); }
-.pamount { color: #A8853F; font-size: 36rpx; font-weight: 700; margin-right: 24rpx; }
-.paybtn { flex: 1; }
+.form-title { font-size: 26rpx; margin: 28rpx 0 14rpx; color: #1C1915; }
+.picker { background: #F3EEE6; border-radius: 16rpx; padding: 22rpx 24rpx; font-size: 28rpx; }
+.hours { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.hbtn { background: #F3EEE6; border-radius: 999rpx; padding: 16rpx 32rpx; font-size: 26rpx; color: #6F6252; }
+.hbtn.on { background: #1C1915; color: #F6E7C8; }
+.plabel { font-size: 20rpx; color: #8A8175; letter-spacing: 2rpx; }
+.pamount { margin-right: 0; }
 </style>

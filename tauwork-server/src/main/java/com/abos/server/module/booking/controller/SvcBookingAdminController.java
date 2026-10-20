@@ -2,8 +2,10 @@ package com.abos.server.module.booking.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.abos.server.common.result.Result;
+import com.abos.server.module.booking.dto.SvcBookStaffDTO;
 import com.abos.server.module.booking.entity.SvcBooking;
 import com.abos.server.module.booking.service.SvcBookingService;
+import com.abos.server.security.LoginContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +29,12 @@ public class SvcBookingAdminController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword) {
         return Result.ok(svcBookingService.adminList(bookDate, status, keyword));
+    }
+
+    @PostMapping
+    @SaCheckPermission("booking:manage")
+    public Result<SvcBooking> create(@RequestBody SvcBookStaffDTO dto) {
+        return Result.ok(svcBookingService.createByStaff(dto, LoginContext.currentAdminId()));
     }
 
     /** status: CONFIRMED/DONE/CANCELED/NO_SHOW（后两者可带 failReason 归因） */

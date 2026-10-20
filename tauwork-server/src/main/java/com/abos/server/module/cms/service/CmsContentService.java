@@ -117,21 +117,32 @@ public class CmsContentService {
         return listPublished(CmsContent.TYPE_CASE_STORY, "HOME_STORY");
     }
 
-    /** 公告资讯列表 */
+    /** 公告资讯列表：置顶、排序在前，再按展示日期 */
     public List<CmsContent> listNews(long page, long size) {
         IPage<CmsContent> p = cmsMapper.selectPage(new Page<>(page, size),
                 Wrappers.<CmsContent>lambdaQuery()
                         .eq(CmsContent::getContentType, CmsContent.TYPE_NEWS)
                         .eq(CmsContent::getStatus, "PUBLISHED")
+                        .orderByDesc(CmsContent::getIsTop)
+                        .orderByDesc(CmsContent::getSortNo)
                         .orderByDesc(CmsContent::getEffectiveAt));
-        return p.getRecords();
+        return p.getRecords().stream().filter(CmsContent::isPublishedNow).toList();
     }
 
     /** 资讯详情（仅返回已发布的） */
     public CmsContent newsDetail(Long id) {
+        return publishedDetail(id, CmsContent.TYPE_NEWS, "资讯不存在或已下架");
+    }
+
+    /** 客户故事详情（仅返回已发布的） */
+    public CmsContent storyDetail(Long id) {
+        return publishedDetail(id, CmsContent.TYPE_CASE_STORY, "故事不存在或已下架");
+    }
+
+    private CmsContent publishedDetail(Long id, String type, String missing) {
         CmsContent c = getById(id);
-        if (!CmsContent.TYPE_NEWS.equals(c.getContentType()) || !c.isPublishedNow()) {
-            throw new BizException(ErrorCode.NOT_FOUND, "资讯不存在或已下架");
+        if (!type.equals(c.getContentType()) || !c.isPublishedNow()) {
+            throw new BizException(ErrorCode.NOT_FOUND, missing);
         }
         return c;
     }

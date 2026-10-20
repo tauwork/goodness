@@ -6,6 +6,7 @@ import com.abos.server.module.customer.mapper.CustomerMapper;
 import com.abos.server.module.customer.service.PhoneBindService;
 import com.abos.server.security.LoginContext;
 import jakarta.validation.constraints.NotBlank;
+import cn.dev33.satoken.stp.StpUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -42,10 +43,12 @@ public class PhoneBindController {
     }
 
     @PostMapping("/bind")
-    public Result<Customer> bind(@Validated @RequestBody PhoneBody body) {
-        Long cid = LoginContext.currentCustomerId();
-        phoneBindService.bind(cid, body.getPhone(), body.getCode());
-        return Result.ok(customerMapper.selectById(cid));
+    public Result<Map<String, Object>> bind(@Validated @RequestBody PhoneBody body) {
+        Customer customer = phoneBindService.bind(LoginContext.currentCustomerId(), body.getPhone(), body.getCode());
+        return Result.ok(Map.of(
+                "customerId", customer.getId(),
+                "token", StpUtil.getTokenValue(),
+                "phone", customer.getPhone()));
     }
 
     @GetMapping("/status")

@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8080'
+// 真机调试访问的是手机自己的 localhost，这里用电脑的局域网地址。换网络后改这一行。
+export const BASE = 'http://192.168.1.232:8080'
 
 function request(method, url, data, needAuth) {
   return new Promise((resolve, reject) => {
@@ -59,6 +60,7 @@ function doLogin(code, resolve, reject) {
       if (body.code === 0) {
         uni.setStorageSync('token', body.data.token)
         uni.setStorageSync('customerId', body.data.customerId)
+        bindStoredPartner()
         resolve(body.data)
       } else {
         reject(new Error(body.msg))
@@ -66,6 +68,25 @@ function doLogin(code, resolve, reject) {
     },
     fail: reject
   })
+}
+
+export function capturePartner(options) {
+  const query = (options && options.query) || {}
+  let code = query.partner || ''
+  const scene = query.scene || (options && options.scene) || ''
+  if (!code && scene) {
+    const text = decodeURIComponent(scene)
+    const matched = text.match(/partner=([A-Za-z0-9]+)/)
+    code = matched ? matched[1] : (/^[A-Za-z0-9]{4,16}$/.test(text) ? text : '')
+  }
+  if (code) uni.setStorageSync('partnerCode', String(code).toUpperCase())
+  if (uni.getStorageSync('token')) bindStoredPartner()
+}
+
+function bindStoredPartner() {
+  const code = uni.getStorageSync('partnerCode')
+  if (!code || !uni.getStorageSync('token')) return
+  request('POST', '/api/mini/partner/visit', { code }, true).catch(() => {})
 }
 
 export default {

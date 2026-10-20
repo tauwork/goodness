@@ -2,6 +2,7 @@ package com.abos.server.module.sysuser.entity;
 
 import com.abos.server.common.base.BaseEntity;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 public class SysUser extends BaseEntity {
 
     private String username;
+    @JsonIgnore
     private String passwordHash;
     private String realName;
     /** ADMIN/DIRECTOR/CONSULTANT/CASE_OPS/FINANCE/SPACE_OPS */

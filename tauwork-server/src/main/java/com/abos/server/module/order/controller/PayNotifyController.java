@@ -1,7 +1,13 @@
 package com.abos.server.module.order.controller;
 
+import com.abos.server.common.enums.ErrorCode;
+import com.abos.server.common.exception.BizException;
 import com.abos.server.module.booking.service.SpaceBookingService;
+import com.abos.server.module.goods.service.GoodsOrderService;
+import com.abos.server.module.order.entity.Order;
+import com.abos.server.module.order.mapper.OrderMapper;
 import com.abos.server.module.order.pay.PayClient;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,13 +28,23 @@ public class PayNotifyController {
 
     private final PayClient payClient;
     private final SpaceBookingService bookingService;
+    private final GoodsOrderService goodsOrderService;
+    private final OrderMapper orderMapper;
 
     @PostMapping("/notify/wx")
     public ResponseEntity<Map<String, String>> wxNotify(@RequestBody byte[] body,
                                                         @RequestHeader Map<String, String> headers) {
         try {
             String orderNo = payClient.parseNotify(body, headers);
-            bookingService.handlePaySuccess(orderNo);
+            Order order = orderMapper.selectOne(Wrappers.<Order>lambdaQuery().eq(Order::getOrderNo, orderNo));
+            if (order == null) {
+                throw new BizException(ErrorCode.ORDER_NOT_FOUND);
+            }
+            if ("GOODS".equals(order.getType())) {
+                goodsOrderService.handlePaySuccess(orderNo);
+            } else {
+                bookingService.handlePaySuccess(orderNo);
+            }
             return ResponseEntity.ok(Map.of("code", "SUCCESS", "message", "成功"));
         } catch (Exception e) {
             log.error("微信回调处理失败", e);

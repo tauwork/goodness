@@ -2,8 +2,8 @@
   <div class="login-page">
     <div class="login-card">
       <img class="logo" src="../assets/logo.png" alt="logo" />
-      <h2>Tauwork 九千善</h2>
-      <p class="sub">运营管理平台</p>
+      <h2>九千善Goodness</h2>
+      <p class="sub">智能业务运营系统ABOS</p>
       <el-form :model="form" @keyup.enter="doLogin">
         <el-form-item>
           <el-input v-model="form.username" placeholder="账号" size="large" />
@@ -50,7 +50,7 @@ async function doLogin() {
   background:linear-gradient(160deg,#0E2544 0%,#16355E 100%); }
 .login-card { width:360px; background:#fff; border-radius:18px; padding:38px 34px 26px; text-align:center; }
 .logo { width:56px;height:56px;border-radius:16px;margin:0 auto 14px;object-fit:contain; }
-h2 { font-size:20px;color:#16355E;margin-bottom:2px; }
-.sub { color:#8A94A8;font-size:12px;margin:4px 0 24px;letter-spacing:2px; }
+h2 { font-size:17px;font-weight:600;color:#22304A;margin-bottom:2px; }
+.sub { color:#6B7C93;font-size:13px;font-weight:400;margin:4px 0 24px; }
 .tip { color:#B7BFCF;font-size:11px;margin-top:16px; }
 </style>

@@ -23,8 +23,16 @@ public class LeadController {
     public Result<IPage<Lead>> page(@RequestParam(defaultValue = "1") long page,
                                     @RequestParam(defaultValue = "10") long size,
                                     @RequestParam(required = false) String status,
-                                    @RequestParam(required = false) String source) {
-        return Result.ok(leadService.page(page, size, status, source));
+                                    @RequestParam(required = false) String source,
+                                    @RequestParam(required = false) String keyword) {
+        return Result.ok(leadService.page(page, size, status, source, keyword));
+    }
+
+    /** 按手机号归入客户库 */
+    @PutMapping("/{id}/convert")
+    @SaCheckPermission("crm:manage")
+    public Result<Lead> convert(@PathVariable Long id) {
+        return Result.ok(leadService.convert(id));
     }
 
     @PutMapping("/{id}/assign/{ownerId}")

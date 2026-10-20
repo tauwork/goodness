@@ -12,9 +12,10 @@ import java.math.BigDecimal;
 @TableName("svc_product")
 public class SvcProduct extends BaseEntity {
 
-    /** SERVICE 服务产品 / SPACE 空间产品 */
+    /** SERVICE 服务产品 / SPACE 空间产品 / GOODS 通用商品 */
     public static final String TYPE_SERVICE = "SERVICE";
     public static final String TYPE_SPACE = "SPACE";
+    public static final String TYPE_GOODS = "GOODS";
 
     private String prodType;
     /** 分类 product_category.id */
@@ -23,9 +24,16 @@ public class SvcProduct extends BaseEntity {
     private String bizLine;
     private String name;
     private String subtitle;
+    /** 主图 /files/... */
+    private String coverUrl;
+    private String detail;
     /** QUOTE/FIXED/STAGED/MEMBER */
     private String priceMode;
     private BigDecimal priceValue;
+    /** 通用商品库存件数 */
+    private Integer stock;
+    /** 通用商品规格 */
+    private String spec;
     private BigDecimal commissionL1;
     private BigDecimal commissionL2;
     private Long flowTplId;

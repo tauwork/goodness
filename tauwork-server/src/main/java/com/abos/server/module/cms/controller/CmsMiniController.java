@@ -14,6 +14,7 @@ import java.util.List;
  *  GET /api/mini/cms/news     公告资讯列表
  *  GET /api/mini/cms/news/{id} 资讯详情
  *  GET /api/mini/cms/story    首页客户故事
+ *  GET /api/mini/cms/story/{id} 客户故事详情
  */
 @RestController
 @RequestMapping("/api/mini/cms")
@@ -30,6 +31,11 @@ public class CmsMiniController {
     @GetMapping("/story")
     public Result<List<CmsContent>> stories() {
         return Result.ok(cmsService.listStories());
+    }
+
+    @GetMapping("/story/{id}")
+    public Result<CmsContent> storyDetail(@PathVariable Long id) {
+        return Result.ok(cmsService.storyDetail(id));
     }
 
     @GetMapping("/news")

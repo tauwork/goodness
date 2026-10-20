@@ -3,7 +3,9 @@
     <template #header>
       <div style="display:flex;gap:10px;align-items:center">
         <b>线索池</b>
-        <el-select v-model="q.status" placeholder="全部状态" clearable style="width:130px;margin-left:auto" @change="load">
+        <el-input v-model="q.keyword" placeholder="姓名、手机号、意向" clearable style="width:200px;margin-left:auto"
+                  @keyup.enter="load" @clear="load" />
+        <el-select v-model="q.status" placeholder="全部状态" clearable style="width:130px" @change="load">
           <el-option v-for="(t, s) in statusMap" :key="s" :label="t" :value="s" />
         </el-select>
         <el-button @click="load">刷新</el-button>
@@ -11,7 +13,8 @@
       </div>
     </template>
     <el-table :data="list" stripe>
-      <el-table-column prop="id" label="线索ID" width="170" show-overflow-tooltip />
+      <el-table-column prop="name" label="姓名" width="110" />
+      <el-table-column prop="phone" label="手机号" width="130" />
       <el-table-column label="来源" width="110">
         <template #default="{ row }">{{ sourceMap[row.source] || row.source }}</template>
       </el-table-column>
@@ -27,8 +30,8 @@
           <el-tag :type="tagType(row.status)" size="small" effect="dark">{{ statusMap[row.status] }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="归属顾问ID" width="120">
-        <template #default="{ row }">{{ row.ownerId || '—' }}</template>
+      <el-table-column label="顾问" width="110">
+        <template #default="{ row }">{{ row.ownerName || '—' }}</template>
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="170">
         <template #default="{ row }">{{ (row.createTime || '').slice(0, 16) }}</template>
@@ -43,6 +46,8 @@
                      @click="followUp(row)">跟进打卡</el-button>
           <el-button v-if="['ASSIGNED', 'IN_PROGRESS'].includes(row.status)" size="small" type="warning" plain
                      @click="release(row)">退回公海</el-button>
+          <el-button v-if="row.status !== 'CONVERTED'" size="small" type="success" plain
+                     @click="convert(row)">转入客户库</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -55,13 +60,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import http from '../utils/http'
 
 const list = ref([])
-const q = reactive({ status: null })
+const q = reactive({ status: null, keyword: '' })
 
 const statusMap = { NEW: '新线索', ASSIGNED: '已分配', IN_PROGRESS: '跟进中', CONVERTED: '已成交', PUBLIC_POOL: '公海池' }
 const sourceMap = { ASSESS: '智能评估', BOOKING: '咨询预约', CONTENT: '内容留资', REFERRAL: '转介绍', EVENT: '沙龙活动', RENEWAL_CAL: '续签日历' }
 
 async function load() {
-  const page = await http.get('/admin/lead/page', { params: { page: 1, size: 50, status: q.status || undefined } })
+  const page = await http.get('/admin/lead/page', { params: { page: 1, size: 50, status: q.status || undefined, keyword: q.keyword || undefined } })
   list.value = page.records
 }
 
@@ -92,6 +97,15 @@ async function release(row) {
   await http.put(`/admin/lead/${row.id}/release`)
   ElMessage.success('已退回公海池')
   load()
+}
+
+async function convert(row) {
+  await ElMessageBox.confirm('按手机号归入客户库。没有档案时会新建一份意向客户。', '转入客户库')
+  try {
+    await http.put(`/admin/lead/${row.id}/convert`)
+    ElMessage.success('已转入客户库')
+    load()
+  } catch (e) { ElMessage.error(e.message) }
 }
 
 async function recycle() {

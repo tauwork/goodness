@@ -17,3 +17,6 @@ tauwork-admin/dist/
 # 本地环境与敏感信息
 *.local.yml
 application-local.yml
+
+# 上传文件（服务器本地）
+tauwork-server/data/

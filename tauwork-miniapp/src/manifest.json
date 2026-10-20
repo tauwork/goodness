@@ -1,16 +1,22 @@
 {
   "name": "九千善",
-  "appid": "",
+  "appid": "wx4ee6a3b3a2e2606a",
   "description": "跨境创业一站式服务平台",
   "versionName": "0.4.0",
   "versionCode": "4",
   "mp-weixin": {
-    "appid": "",
+    "appid": "wx4ee6a3b3a2e2606a",
     "setting": {
       "urlCheck": false,
       "es6": true,
       "minified": true
     },
+    "permission": {
+      "scope.userLocation": {
+        "desc": "你的位置将用于查找附近社区并计算距离"
+      }
+    },
+    "requiredPrivateInfos": ["getLocation"],
     "usingComponents": true
   },
   "vueVersion": "3"

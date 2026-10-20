@@ -45,6 +45,18 @@ public class CommunityAdminController {
         return Result.ok(communityService.update(community));
     }
 
+    @PutMapping("/{id}/on")
+    @SaCheckPermission("space:manage")
+    public Result<Community> onSale(@PathVariable Long id) {
+        return Result.ok(communityService.setOnSale(id, true));
+    }
+
+    @PutMapping("/{id}/off")
+    @SaCheckPermission("space:manage")
+    public Result<Community> offSale(@PathVariable Long id) {
+        return Result.ok(communityService.setOnSale(id, false));
+    }
+
     /* ---------- 社区×产品关联 ---------- */
 
     @GetMapping("/{id}/product")

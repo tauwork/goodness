@@ -2,8 +2,13 @@ package com.abos.server.module.lead.service;
 
 import com.abos.server.common.enums.ErrorCode;
 import com.abos.server.common.exception.BizException;
+import com.abos.server.module.customer.dto.CustomerProfileDTO;
+import com.abos.server.module.customer.entity.Customer;
+import com.abos.server.module.customer.mapper.CustomerMapper;
+import com.abos.server.module.customer.service.CustomerAdminService;
 import com.abos.server.module.lead.entity.Lead;
 import com.abos.server.module.lead.mapper.LeadMapper;
+import com.abos.server.module.sysuser.service.SysUserService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -12,19 +17,33 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class LeadService {
 
     private final LeadMapper leadMapper;
+    private final CustomerMapper customerMapper;
+    private final CustomerAdminService customerAdmin;
+    private final SysUserService staff;
 
-    public IPage<Lead> page(long page, long size, String status, String source) {
-        return leadMapper.selectPage(new Page<>(page, size),
+    public IPage<Lead> page(long page, long size, String status, String source, String keyword) {
+        IPage<Lead> result = leadMapper.selectPage(new Page<>(page, size),
                 Wrappers.<Lead>lambdaQuery()
                         .eq(StringUtils.hasText(status), Lead::getStatus, status)
                         .eq(StringUtils.hasText(source), Lead::getSource, source)
+                        .and(StringUtils.hasText(keyword), w -> w
+                                .like(Lead::getName, keyword)
+                                .or().like(Lead::getPhone, keyword)
+                                .or().like(Lead::getIntent, keyword))
                         .orderByDesc(Lead::getCreateTime));
+        fill(result.getRecords());
+        return result;
     }
 
     /** 分配线索给顾问 */
@@ -73,6 +92,72 @@ public class LeadService {
         lead.setAssignedAt(null);
         leadMapper.updateById(lead);
         return lead;
+    }
+
+    /** 按手机号归入客户库。没有档案时新建意向客户。 */
+    @org.springframework.transaction.annotation.Transactional
+    public Lead convert(Long id) {
+        Lead lead = own(id);
+        if ("CONVERTED".equals(lead.getStatus())) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "这条线索已经转化");
+        }
+        Customer customer = null;
+        if (lead.getCustomerId() != null) {
+            customer = customerMapper.selectById(lead.getCustomerId());
+        }
+        if (customer == null && StringUtils.hasText(lead.getPhone())) {
+            customer = customerAdmin.findByPhone(lead.getPhone());
+        }
+        if (customer == null) {
+            if (!StringUtils.hasText(lead.getPhone())) {
+                throw new BizException(ErrorCode.BAD_REQUEST, "线索没有手机号，无法归入客户库");
+            }
+            CustomerProfileDTO profile = new CustomerProfileDTO();
+            profile.setName(StringUtils.hasText(lead.getName()) ? lead.getName() : "未命名客户");
+            profile.setPhone(lead.getPhone());
+            profile.setSource(lead.getSource());
+            customer = customerAdmin.create(profile, lead.getOwnerId());
+        }
+        customerAdmin.ensureActive(customer);
+        if (Customer.STAGE_POOL.equals(customer.getStage()) && lead.getOwnerId() != null) {
+            customer.setStage(Customer.STAGE_INTENT);
+            customer.setOwnerId(lead.getOwnerId());
+            customerMapper.updateById(customer);
+        }
+        lead.setCustomerId(customer.getId());
+        if (!StringUtils.hasText(lead.getName())) {
+            lead.setName(customer.getName());
+        }
+        if (!StringUtils.hasText(lead.getPhone())) {
+            lead.setPhone(customer.getPhone());
+        }
+        lead.setStatus("CONVERTED");
+        leadMapper.updateById(lead);
+        return lead;
+    }
+
+    private void fill(List<Lead> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+        List<Long> customerIds = rows.stream().map(Lead::getCustomerId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, Customer> customers = new HashMap<>();
+        if (!customerIds.isEmpty()) {
+            customerMapper.selectBatchIds(customerIds).forEach(c -> customers.put(c.getId(), c));
+        }
+        Map<Long, String> names = staff.names(rows.stream().map(Lead::getOwnerId).filter(Objects::nonNull).toList());
+        rows.forEach(row -> {
+            Customer c = row.getCustomerId() == null ? null : customers.get(row.getCustomerId());
+            if (c != null) {
+                if (!StringUtils.hasText(row.getName())) {
+                    row.setName(c.getName());
+                }
+                if (!StringUtils.hasText(row.getPhone())) {
+                    row.setPhone(c.getPhone());
+                }
+            }
+            row.setOwnerName(names.get(row.getOwnerId()));
+        });
     }
 
     private Lead own(Long id) {

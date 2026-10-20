@@ -15,8 +15,10 @@ import com.abos.server.module.order.entity.PayLog;
 import com.abos.server.module.order.mapper.OrderMapper;
 import com.abos.server.module.order.mapper.PayLogMapper;
 import com.abos.server.module.order.pay.PayClient;
+import com.abos.server.module.partner.service.PartnerService;
 import com.abos.server.module.product.entity.SvcProduct;
 import com.abos.server.module.product.mapper.SvcProductMapper;
+import com.abos.server.security.AccessScope;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,8 @@ public class SpaceBookingService {
     private final SvcProductMapper productMapper;
     private final CustomerMapper customerMapper;
     private final PayClient payClient;
+    private final AccessScope access;
+    private final PartnerService partnerService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /* ---------------- 小程序：下单 ---------------- */
@@ -56,7 +60,7 @@ public class SpaceBookingService {
     public Map<String, Object> create(Long customerId, BookingCreateDTO dto) {
         CommunityProduct cp = communityProductMapper.selectById(dto.getCommunityProductId());
         if (cp == null || cp.getOnSale() != 1) {
-            throw new BizException(ErrorCode.PRODUCT_NOT_ON_SALE, "该场地在本社区店不可预订");
+            throw new BizException(ErrorCode.PRODUCT_NOT_ON_SALE, "该场地在本社区不可预订");
         }
         SvcProduct product = productMapper.selectById(cp.getProductId());
         if (product == null) {
@@ -150,6 +154,7 @@ public class SpaceBookingService {
             booking.setStatus("PAID");
             booking.setEntryCode(RandomUtil.randomNumbers(8));
             bookingMapper.updateById(booking);
+            partnerService.accrue(order);
             logPay(orderNo, null, "NOTIFY", true, "entry_code=" + booking.getEntryCode());
         }
     }
@@ -196,6 +201,7 @@ public class SpaceBookingService {
                             booking.getAmount().multiply(BigDecimal.valueOf(100)));
                     order.setPayStatus("REFUNDED");
                     orderMapper.updateById(order);
+                    partnerService.reverseOrder(order.getId());
                     logPay(booking.getOrderNo(), null, "REFUND", true, "operator=" + operatorId);
                 }
             }
@@ -207,8 +213,13 @@ public class SpaceBookingService {
 
     /** 后台列表：按社区店/日期/状态筛选 */
     public List<SpaceBooking> adminList(Long communityId, LocalDate bookDate, String status) {
+        AccessScope.View scope = access.current();
+        if (!scope.all() && scope.communityIds().isEmpty()) {
+            return List.of();
+        }
         return bookingMapper.selectList(Wrappers.<SpaceBooking>lambdaQuery()
                 .eq(communityId != null, SpaceBooking::getCommunityId, communityId)
+                .in(!scope.all(), SpaceBooking::getCommunityId, scope.communityIds())
                 .eq(bookDate != null, SpaceBooking::getBookDate, bookDate)
                 .eq(status != null, SpaceBooking::getStatus, status)
                 .orderByDesc(SpaceBooking::getCreateTime));

@@ -4,8 +4,10 @@ import com.abos.server.common.enums.ErrorCode;
 import com.abos.server.common.exception.BizException;
 import com.abos.server.module.product.entity.ProductAttrDef;
 import com.abos.server.module.product.entity.ProductCategory;
+import com.abos.server.module.product.entity.SvcProduct;
 import com.abos.server.module.product.mapper.ProductAttrDefMapper;
 import com.abos.server.module.product.mapper.ProductCategoryMapper;
+import com.abos.server.module.product.mapper.SvcProductMapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductCategoryService {
 
+    private static final List<String> PROD_TYPES = List.of(
+            SvcProduct.TYPE_SERVICE, SvcProduct.TYPE_SPACE, SvcProduct.TYPE_GOODS);
+
     private final ProductCategoryMapper categoryMapper;
     private final ProductAttrDefMapper attrDefMapper;
+    private final SvcProductMapper productMapper;
 
     /* ---------------- 分类 ---------------- */
 
@@ -35,8 +41,14 @@ public class ProductCategoryService {
     }
 
     public ProductCategory create(ProductCategory category) {
-        if (!List.of("SERVICE", "SPACE").contains(category.getProdType())) {
-            throw new BizException(ErrorCode.BAD_REQUEST, "prodType 必须是 SERVICE/SPACE");
+        if (!PROD_TYPES.contains(category.getProdType())) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "prodType 必须是 GOODS/SERVICE/SPACE");
+        }
+        if (!StringUtils.hasText(category.getName())) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "分类名称不能为空");
+        }
+        if (!StringUtils.hasText(category.getCode())) {
+            category.setCode(category.getProdType().substring(0, 1) + System.currentTimeMillis());
         }
         if (StringUtils.hasText(category.getCode())) {
             Long n = categoryMapper.selectCount(Wrappers.<ProductCategory>lambdaQuery()
@@ -100,6 +112,11 @@ public class ProductCategoryService {
                 .eq(ProductAttrDef::getCategoryId, id));
         if (attrCount != null && attrCount > 0) {
             throw new BizException(ErrorCode.OPERATION_FAILED, "该分类下有特征参数定义，请先删除参数");
+        }
+        Long productCount = productMapper.selectCount(Wrappers.<SvcProduct>lambdaQuery()
+                .eq(SvcProduct::getCategoryId, id));
+        if (productCount != null && productCount > 0) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "该分类下还有商品，不能删除");
         }
         categoryMapper.deleteById(id);
     }

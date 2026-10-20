@@ -1,6 +1,7 @@
 package com.abos.server.module.booking.entity;
 
 import com.abos.server.common.base.BaseEntity;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,4 +31,11 @@ public class SvcBooking extends BaseEntity {
     /** 未转化归因 */
     private String failReason;
     private Long consultantId;
+
+    @TableField(exist = false)
+    private String customerName;
+    @TableField(exist = false)
+    private String customerPhone;
+    @TableField(exist = false)
+    private String consultantName;
 }

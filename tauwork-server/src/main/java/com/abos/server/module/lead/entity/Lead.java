@@ -1,6 +1,7 @@
 package com.abos.server.module.lead.entity;
 
 import com.abos.server.common.base.BaseEntity;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,4 +25,7 @@ public class Lead extends BaseEntity {
     private Long ownerId;
     private LocalDateTime assignedAt;
     private LocalDateTime lastFollowAt;
+
+    @TableField(exist = false)
+    private String ownerName;
 }

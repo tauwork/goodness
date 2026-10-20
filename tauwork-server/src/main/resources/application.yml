@@ -48,6 +48,12 @@ logging:
   level:
     com.abos.server: debug
 
+# 通用文件上传：只存本机目录，不接云存储
+app:
+  upload:
+    dir: data/uploads
+    url-prefix: /files
+
 # 小程序与微信支付（dev 留空走 mock 登录/模拟支付；正式环境在 prod 覆盖）
 wx:
   mini:

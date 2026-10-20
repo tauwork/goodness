@@ -5,6 +5,8 @@ import com.abos.server.common.exception.BizException;
 import com.abos.server.module.assessment.engine.AssessEngine;
 import com.abos.server.module.assessment.entity.*;
 import com.abos.server.module.assessment.mapper.*;
+import com.abos.server.module.customer.entity.Customer;
+import com.abos.server.module.customer.mapper.CustomerMapper;
 import com.abos.server.module.lead.entity.Lead;
 import com.abos.server.module.lead.mapper.LeadMapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -29,6 +31,7 @@ public class AssessmentService {
     private final AssessOptionMapper optionMapper;
     private final AssessRecommendMapper recommendMapper;
     private final LeadMapper leadMapper;
+    private final CustomerMapper customerMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /** 题库视图：题组 → 题目 → 选项（公开） */
@@ -113,7 +116,14 @@ public class AssessmentService {
                 : result.getRecommends().get(0).getName());
         lead.setAssessScore(result.getScore());
         lead.setStatus("NEW");
-        if (customerId != null) lead.setCustomerId(customerId);
+        if (customerId != null) {
+            lead.setCustomerId(customerId);
+            Customer customer = customerMapper.selectById(customerId);
+            if (customer != null) {
+                lead.setName(customer.getName());
+                lead.setPhone(customer.getPhone());
+            }
+        }
         leadMapper.insert(lead);
 
         // 返回结果（推荐含 productId 便于前端跳服务详情）

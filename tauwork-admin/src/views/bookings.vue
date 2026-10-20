@@ -11,7 +11,7 @@
     <el-card shadow="never">
       <template #header>
         <div style="display:flex;gap:10px;align-items:center">
-          <b>空间预订订单</b>
+          <b>社区预订订单</b>
           <el-select v-model="q.status" placeholder="全部状态" clearable style="width:140px;margin-left:auto" @change="load">
             <el-option label="待支付" value="PENDING_PAY" />
             <el-option label="已支付" value="PAID" />

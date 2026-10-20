@@ -28,5 +28,7 @@ public class Community extends BaseEntity {
     private String intro;
     /** OPEN/PREPARING/CLOSED */
     private String status;
+    /** 到店咨询方式，对应小程序预约 mode；视频咨询不归属社区 */
+    private String bookingMode;
     private Integer sortNo;
 }

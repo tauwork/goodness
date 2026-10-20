@@ -1,6 +1,7 @@
 package com.abos.server.module.community.controller;
 
 import com.abos.server.common.result.Result;
+import com.abos.server.module.community.dto.CommunityCardVO;
 import com.abos.server.module.community.dto.CommunityProductVO;
 import com.abos.server.module.community.entity.Community;
 import com.abos.server.module.community.service.CommunityService;
@@ -27,9 +28,16 @@ public class CommunityMiniController {
         return Result.ok(communityService.miniList(city));
     }
 
+    @GetMapping("/community-card")
+    public Result<List<CommunityCardVO>> cards(@RequestParam(required = false) Double lat,
+                                               @RequestParam(required = false) Double lng,
+                                               @RequestParam(required = false) String keyword) {
+        return Result.ok(communityService.miniCards(lat, lng, keyword));
+    }
+
     @GetMapping("/community/{id}")
     public Result<Community> communityDetail(@PathVariable Long id) {
-        return Result.ok(communityService.getById(id));
+        return Result.ok(communityService.miniGet(id));
     }
 
     @GetMapping("/community/{id}/product")
