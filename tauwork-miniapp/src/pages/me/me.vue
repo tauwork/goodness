@@ -52,7 +52,9 @@ export default {
         { icon: '/static/icons/calendar.png', title: '我的预订', sub: '社区、咨询与商品订单', url: '/pages/me/bookings' },
         { icon: '/static/icons/phone.png', title: '绑定手机号', sub: '顾问回访与进度通知', url: '/pages/me/phone' },
         { icon: '/static/icons/family.png', title: '家庭档案', sub: '为评估准备家庭情况', url: '/pages/me/family' },
-        { icon: '/static/icons/share.png', title: '我的分销', sub: '提成和成交客户', url: '/pages/me/partner' }
+        { icon: '/static/icons/share.png', title: '合伙人海报', sub: '邀请好友成为合伙人', url: '/pages/me/partner-poster' },
+        { icon: '/static/icons/coin.png', title: '我的佣金', sub: '直接、间接和可提现余额', url: '/pages/me/partner-commission' },
+        { icon: '/static/icons/family.png', title: '我的客户', sub: '直接客户和间接客户', url: '/pages/me/partner-customers' }
       ]
     }
   },

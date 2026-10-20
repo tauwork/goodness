@@ -8,15 +8,18 @@ import com.abos.server.module.customer.mapper.CustomerMapper;
 import com.abos.server.module.customer.service.CustomerAdminService;
 import com.abos.server.module.order.entity.Order;
 import com.abos.server.module.order.mapper.OrderMapper;
+import com.abos.server.module.partner.dto.PartnerCustomerVO;
 import com.abos.server.module.partner.dto.PartnerDetailVO;
 import com.abos.server.module.partner.dto.PartnerHomeVO;
 import com.abos.server.module.partner.dto.PartnerSaveDTO;
 import com.abos.server.module.partner.entity.Partner;
 import com.abos.server.module.partner.entity.PartnerCommission;
 import com.abos.server.module.partner.entity.PartnerRule;
+import com.abos.server.module.partner.entity.PartnerWithdraw;
 import com.abos.server.module.partner.mapper.PartnerCommissionMapper;
 import com.abos.server.module.partner.mapper.PartnerMapper;
 import com.abos.server.module.partner.mapper.PartnerRuleMapper;
+import com.abos.server.module.partner.mapper.PartnerWithdrawMapper;
 import com.abos.server.module.product.entity.ProductCategory;
 import com.abos.server.module.product.entity.SvcProduct;
 import com.abos.server.module.product.mapper.ProductCategoryMapper;
@@ -30,9 +33,12 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -45,6 +51,7 @@ public class PartnerService {
     private final PartnerMapper partnerMapper;
     private final PartnerRuleMapper ruleMapper;
     private final PartnerCommissionMapper commissionMapper;
+    private final PartnerWithdrawMapper withdrawMapper;
     private final CustomerMapper customerMapper;
     private final CustomerAdminService customerAdmin;
     private final ProductCategoryMapper categoryMapper;
@@ -54,18 +61,7 @@ public class PartnerService {
     public List<Partner> list() {
         List<Partner> rows = partnerMapper.selectList(Wrappers.<Partner>lambdaQuery().orderByDesc(Partner::getCreateTime));
         fillIdentity(rows);
-        Map<Long, BigDecimal> amount = new HashMap<>();
-        Map<Long, Long> count = new HashMap<>();
-        commissionMapper.selectList(Wrappers.<PartnerCommission>lambdaQuery()
-                        .eq(PartnerCommission::getStatus, PartnerCommission.ACCRUED))
-                .forEach(row -> {
-                    amount.merge(row.getPartnerId(), row.getCommissionAmount(), BigDecimal::add);
-                    count.merge(row.getPartnerId(), 1L, Long::sum);
-                });
-        rows.forEach(row -> {
-            row.setCommissionAmount(amount.getOrDefault(row.getId(), BigDecimal.ZERO));
-            row.setDealCount(count.getOrDefault(row.getId(), 0L));
-        });
+        fillStats(rows);
         return rows;
     }
 
@@ -84,15 +80,14 @@ public class PartnerService {
                 .eq(PartnerCommission::getPartnerId, id)
                 .orderByDesc(PartnerCommission::getCreateTime));
         fillDealCustomers(deals);
-        partner.setCommissionAmount(deals.stream()
-                .filter(row -> PartnerCommission.ACCRUED.equals(row.getStatus()))
-                .map(PartnerCommission::getCommissionAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add));
-        partner.setDealCount(deals.stream().filter(row -> PartnerCommission.ACCRUED.equals(row.getStatus())).count());
+        fillStats(List.of(partner));
         PartnerDetailVO vo = new PartnerDetailVO();
         vo.setPartner(partner);
         vo.setDeals(deals);
-        vo.setCustomers(boundCustomers(id));
+        vo.setCustomers(customersOf(id));
+        vo.setWithdraws(withdrawMapper.selectList(Wrappers.<PartnerWithdraw>lambdaQuery()
+                .eq(PartnerWithdraw::getPartnerId, id)
+                .orderByDesc(PartnerWithdraw::getCreateTime)));
         return vo;
     }
 
@@ -121,6 +116,7 @@ public class PartnerService {
         Partner partner = new Partner();
         partner.setCustomerId(customer.getId());
         partner.setCode(newCode());
+        partner.setParentId(validParent(null, dto.getParentId()));
         partner.setStatus(1);
         partnerMapper.insert(partner);
         partner.setName(customer.getName());
@@ -206,13 +202,21 @@ public class PartnerService {
         if (partner == null) {
             vo.setPartner(false);
             vo.setCommissionAmount(BigDecimal.ZERO);
-            vo.setDealCount(0);
+            vo.setDirectAmount(BigDecimal.ZERO);
+            vo.setIndirectAmount(BigDecimal.ZERO);
+            vo.setOtherAmount(BigDecimal.ZERO);
+            vo.setWithdrawnAmount(BigDecimal.ZERO);
+            vo.setPendingAmount(BigDecimal.ZERO);
+            vo.setBalanceAmount(BigDecimal.ZERO);
             vo.setCustomerCount(0);
+            vo.setDirectCount(0);
+            vo.setIndirectCount(0);
             vo.setCustomers(List.of());
             vo.setDeals(List.of());
             return vo;
         }
         fillIdentity(List.of(partner));
+        fillStats(List.of(partner));
         List<PartnerCommission> deals = commissionMapper.selectList(Wrappers.<PartnerCommission>lambdaQuery()
                 .eq(PartnerCommission::getPartnerId, partner.getId())
                 .eq(PartnerCommission::getStatus, PartnerCommission.ACCRUED)
@@ -220,14 +224,117 @@ public class PartnerService {
         fillDealCustomers(deals);
         vo.setPartner(true);
         vo.setName(partner.getName());
+        vo.setPhone(partner.getPhone());
         vo.setCode(partner.getCode());
         vo.setSharePath("/pages/index/index?partner=" + partner.getCode());
+        vo.setJoinPath("/pages/me/partner-join?partner=" + partner.getCode());
         vo.setDeals(deals);
-        vo.setCustomers(boundCustomers(partner.getId()));
-        vo.setCustomerCount(vo.getCustomers().size());
-        vo.setDealCount(deals.size());
-        vo.setCommissionAmount(deals.stream().map(PartnerCommission::getCommissionAmount).reduce(BigDecimal.ZERO, BigDecimal::add));
+        vo.setCustomers(customersOf(partner.getId()));
+        vo.setCustomerCount((partner.getDirectCount() == null ? 0 : partner.getDirectCount())
+                + (partner.getIndirectCount() == null ? 0 : partner.getIndirectCount()));
+        vo.setDirectCount(partner.getDirectCount() == null ? 0 : partner.getDirectCount());
+        vo.setIndirectCount(partner.getIndirectCount() == null ? 0 : partner.getIndirectCount());
+        vo.setCommissionAmount(nz(partner.getCommissionAmount()));
+        vo.setDirectAmount(nz(partner.getDirectAmount()));
+        vo.setIndirectAmount(nz(partner.getIndirectAmount()));
+        vo.setOtherAmount(nz(partner.getOtherAmount()));
+        vo.setWithdrawnAmount(nz(partner.getWithdrawnAmount()));
+        vo.setPendingAmount(pendingAmount(partner.getId()));
+        vo.setBalanceAmount(nz(partner.getBalanceAmount()));
         return vo;
+    }
+
+    /** 海报邀请：成为上级合伙人的下级。已是合伙人不重复开通。 */
+    @Transactional
+    public Partner join(Long customerId, String code) {
+        if (!StringUtils.hasText(code)) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "缺少邀请码");
+        }
+        Partner parent = partnerMapper.selectOne(Wrappers.<Partner>lambdaQuery()
+                .eq(Partner::getCode, code.trim().toUpperCase())
+                .eq(Partner::getStatus, 1));
+        if (parent == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "邀请已失效");
+        }
+        Customer customer = customerAdmin.must(customerId);
+        if (!StringUtils.hasText(customer.getPhone())) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "请先绑定手机号");
+        }
+        if (!StringUtils.hasText(customer.getName())) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "请先在档案里填写姓名");
+        }
+        customerAdmin.ensureActive(customer);
+        Partner existing = partnerMapper.selectOne(Wrappers.<Partner>lambdaQuery()
+                .eq(Partner::getCustomerId, customer.getId()));
+        if (existing != null) {
+            return existing;
+        }
+        if (parent.getCustomerId().equals(customer.getId())) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "不能使用自己的邀请");
+        }
+        Partner partner = new Partner();
+        partner.setCustomerId(customer.getId());
+        partner.setCode(newCode());
+        partner.setParentId(parent.getId());
+        partner.setStatus(1);
+        partnerMapper.insert(partner);
+        return partner;
+    }
+
+    @Transactional
+    public PartnerWithdraw requestWithdraw(Long customerId, BigDecimal amount) {
+        Partner partner = partnerMapper.selectOne(Wrappers.<Partner>lambdaQuery()
+                .eq(Partner::getCustomerId, customerId)
+                .eq(Partner::getStatus, 1));
+        if (partner == null) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "还不是合伙人");
+        }
+        return createWithdraw(partner.getId(), amount, "申请提现", PartnerWithdraw.PENDING);
+    }
+
+    @Transactional
+    public PartnerWithdraw recordWithdraw(Long partnerId, BigDecimal amount, String remark) {
+        must(partnerId);
+        return createWithdraw(partnerId, amount, remark, PartnerWithdraw.PAID);
+    }
+
+    @Transactional
+    public void reviewWithdraw(Long id, String status) {
+        PartnerWithdraw row = withdrawMapper.selectById(id);
+        if (row == null) {
+            throw new BizException(ErrorCode.NOT_FOUND, "提现记录不存在");
+        }
+        if (!PartnerWithdraw.PENDING.equals(row.getStatus())) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "这笔提现已经处理过");
+        }
+        if (PartnerWithdraw.PAID.equals(status)) {
+            row.setStatus(PartnerWithdraw.PAID);
+        } else if (PartnerWithdraw.REJECTED.equals(status)) {
+            row.setStatus(PartnerWithdraw.REJECTED);
+        } else {
+            throw new BizException(ErrorCode.BAD_REQUEST, "只能通过或驳回");
+        }
+        withdrawMapper.updateById(row);
+    }
+
+    @Transactional
+    public PartnerCommission recordOther(Long partnerId, BigDecimal amount, String remark) {
+        Partner partner = must(partnerId);
+        if (amount == null || amount.signum() <= 0) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "金额要大于 0");
+        }
+        PartnerCommission row = new PartnerCommission();
+        row.setPartnerId(partner.getId());
+        row.setCustomerId(partner.getCustomerId());
+        row.setProductName(StringUtils.hasText(remark) ? remark.trim() : "其它佣金");
+        row.setOrderAmount(amount);
+        row.setRate(BigDecimal.valueOf(100));
+        row.setCommissionAmount(amount.setScale(2, RoundingMode.HALF_UP));
+        row.setStatus(PartnerCommission.ACCRUED);
+        row.setSource(PartnerCommission.SOURCE_OTHER);
+        row.setLevel(PartnerCommission.LEVEL_OTHER);
+        commissionMapper.insert(row);
+        return row;
     }
 
     public List<PartnerRule> rules() {
@@ -243,6 +350,7 @@ public class PartnerService {
                         rule = new PartnerRule();
                         rule.setCategoryId(category.getId());
                         rule.setRate(BigDecimal.ZERO);
+                        rule.setRateL2(BigDecimal.ZERO);
                     }
                     rule.setCategoryName(category.getName());
                     rule.setProdType(category.getProdType());
@@ -251,23 +359,26 @@ public class PartnerService {
     }
 
     @Transactional
-    public PartnerRule saveRule(Long categoryId, BigDecimal rate) {
+    public PartnerRule saveRule(Long categoryId, BigDecimal rate, BigDecimal rateL2) {
         if (categoryId == null) {
             throw new BizException(ErrorCode.BAD_REQUEST, "请选择类目");
         }
         if (categoryMapper.selectById(categoryId) == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "类目不存在");
         }
-        BigDecimal value = normalizeRate(rate);
+        BigDecimal direct = normalizeRate(rate);
+        BigDecimal indirect = normalizeRate(rateL2);
         PartnerRule rule = ruleMapper.selectOne(Wrappers.<PartnerRule>lambdaQuery()
                 .eq(PartnerRule::getCategoryId, categoryId));
         if (rule == null) {
             rule = new PartnerRule();
             rule.setCategoryId(categoryId);
-            rule.setRate(value);
+            rule.setRate(direct);
+            rule.setRateL2(indirect);
             ruleMapper.insert(rule);
         } else {
-            rule.setRate(value);
+            rule.setRate(direct);
+            rule.setRateL2(indirect);
             ruleMapper.updateById(rule);
         }
         return rule;
@@ -306,6 +417,20 @@ public class PartnerService {
         if (!PartnerCommission.ACCRUED.equals(row.getStatus())) {
             return;
         }
+        reverseOne(row);
+        commissionMapper.selectList(Wrappers.<PartnerCommission>lambdaQuery()
+                        .eq(PartnerCommission::getRefCommissionId, row.getId())
+                        .eq(PartnerCommission::getStatus, PartnerCommission.ACCRUED))
+                .forEach(this::reverseOne);
+        if (row.getRefCommissionId() != null) {
+            PartnerCommission origin = commissionMapper.selectById(row.getRefCommissionId());
+            if (origin != null && PartnerCommission.ACCRUED.equals(origin.getStatus())) {
+                reverseOne(origin);
+            }
+        }
+    }
+
+    private void reverseOne(PartnerCommission row) {
         row.setStatus(PartnerCommission.REVERSED);
         commissionMapper.updateById(row);
     }
@@ -385,16 +510,206 @@ public class PartnerService {
         row.setCommissionAmount(amount.multiply(rule.getRate()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
         row.setStatus(PartnerCommission.ACCRUED);
         row.setSource(source);
+        row.setLevel(PartnerCommission.LEVEL_DIRECT);
         commissionMapper.insert(row);
+        accrueIndirect(partner, customer, row, rule, category, amount, source);
         return row;
     }
 
-    private List<Customer> boundCustomers(Long partnerId) {
+    private void accrueIndirect(Partner partner, Customer customer, PartnerCommission direct, PartnerRule rule,
+                                ProductCategory category, BigDecimal amount, String source) {
+        if (partner.getParentId() == null || rule.getRateL2() == null || rule.getRateL2().signum() <= 0) {
+            return;
+        }
+        Partner parent = partnerMapper.selectById(partner.getParentId());
+        if (parent == null || parent.getStatus() == null || parent.getStatus() != 1
+                || parent.getCustomerId().equals(customer.getId())) {
+            return;
+        }
+        PartnerCommission row = new PartnerCommission();
+        row.setPartnerId(parent.getId());
+        row.setCustomerId(customer.getId());
+        row.setOrderId(direct.getOrderId());
+        row.setOrderNo(direct.getOrderNo());
+        row.setProductId(direct.getProductId());
+        row.setProductName(direct.getProductName());
+        row.setCategoryId(direct.getCategoryId());
+        row.setCategoryName(category == null ? direct.getCategoryName() : category.getName());
+        row.setOrderAmount(amount);
+        row.setRate(rule.getRateL2());
+        row.setCommissionAmount(amount.multiply(rule.getRateL2()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+        row.setStatus(PartnerCommission.ACCRUED);
+        row.setSource(source);
+        row.setLevel(PartnerCommission.LEVEL_INDIRECT);
+        row.setRefCommissionId(direct.getId());
+        commissionMapper.insert(row);
+    }
+
+    private List<PartnerCustomerVO> customersOf(Long partnerId) {
+        List<Partner> children = partnerMapper.selectList(Wrappers.<Partner>lambdaQuery()
+                .eq(Partner::getParentId, partnerId));
+        Map<Long, String> relationOfPartner = new HashMap<>();
+        relationOfPartner.put(partnerId, "DIRECT");
+        children.forEach(child -> relationOfPartner.put(child.getId(), "INDIRECT"));
+        if (relationOfPartner.isEmpty()) {
+            return List.of();
+        }
         List<Customer> rows = customerMapper.selectList(Wrappers.<Customer>lambdaQuery()
-                .eq(Customer::getPartnerId, partnerId)
+                .in(Customer::getPartnerId, relationOfPartner.keySet())
                 .orderByDesc(Customer::getPartnerBindAt));
-        rows.forEach(this::scrub);
-        return rows;
+        Partner self = partnerMapper.selectById(partnerId);
+        List<PartnerCustomerVO> result = new ArrayList<>();
+        for (Customer customer : rows) {
+            Partner owner = children.stream().filter(child -> child.getId().equals(customer.getPartnerId())).findFirst().orElse(null);
+            if (owner != null && owner.getCustomerId().equals(customer.getId())) {
+                continue;
+            }
+            if (self != null && self.getCustomerId().equals(customer.getId())) {
+                continue;
+            }
+            scrub(customer);
+            PartnerCustomerVO vo = new PartnerCustomerVO();
+            vo.setId(customer.getId());
+            vo.setName(customer.getName());
+            vo.setPhone(customer.getPhone());
+            vo.setPartnerBindSource(customer.getPartnerBindSource());
+            vo.setPartnerBindAt(customer.getPartnerBindAt());
+            vo.setRelation(relationOfPartner.get(customer.getPartnerId()));
+            result.add(vo);
+        }
+        return result;
+    }
+
+    private void fillStats(List<Partner> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+        List<Long> ids = rows.stream().map(Partner::getId).toList();
+        Map<Long, BigDecimal> direct = new HashMap<>();
+        Map<Long, BigDecimal> indirect = new HashMap<>();
+        Map<Long, BigDecimal> other = new HashMap<>();
+        Map<Long, Long> deals = new HashMap<>();
+        commissionMapper.selectList(Wrappers.<PartnerCommission>lambdaQuery()
+                        .in(PartnerCommission::getPartnerId, ids)
+                        .eq(PartnerCommission::getStatus, PartnerCommission.ACCRUED))
+                .forEach(row -> {
+                    String level = row.getLevel() == null ? PartnerCommission.LEVEL_DIRECT : row.getLevel();
+                    if (PartnerCommission.LEVEL_INDIRECT.equals(level)) {
+                        indirect.merge(row.getPartnerId(), row.getCommissionAmount(), BigDecimal::add);
+                    } else if (PartnerCommission.LEVEL_OTHER.equals(level)) {
+                        other.merge(row.getPartnerId(), row.getCommissionAmount(), BigDecimal::add);
+                    } else {
+                        direct.merge(row.getPartnerId(), row.getCommissionAmount(), BigDecimal::add);
+                        deals.merge(row.getPartnerId(), 1L, Long::sum);
+                    }
+                });
+        Map<Long, BigDecimal> paid = new HashMap<>();
+        withdrawMapper.selectList(Wrappers.<PartnerWithdraw>lambdaQuery()
+                        .in(PartnerWithdraw::getPartnerId, ids)
+                        .eq(PartnerWithdraw::getStatus, PartnerWithdraw.PAID))
+                .forEach(row -> paid.merge(row.getPartnerId(), row.getAmount(), BigDecimal::add));
+        List<Partner> children = partnerMapper.selectList(Wrappers.<Partner>lambdaQuery()
+                .in(Partner::getParentId, ids));
+        Map<Long, Long> childParent = new HashMap<>();
+        children.forEach(child -> childParent.put(child.getId(), child.getParentId()));
+        Set<Long> ownerIds = new HashSet<>(ids);
+        ownerIds.addAll(childParent.keySet());
+        Map<Long, Integer> directCount = new HashMap<>();
+        Map<Long, Integer> indirectCount = new HashMap<>();
+        if (!ownerIds.isEmpty()) {
+            customerMapper.selectList(Wrappers.<Customer>lambdaQuery().in(Customer::getPartnerId, ownerIds))
+                    .forEach(customer -> {
+                        if (ids.contains(customer.getPartnerId())) {
+                            Partner self = rows.stream().filter(row -> row.getId().equals(customer.getPartnerId())).findFirst().orElse(null);
+                            if (self != null && self.getCustomerId().equals(customer.getId())) {
+                                return;
+                            }
+                            directCount.merge(customer.getPartnerId(), 1, Integer::sum);
+                        }
+                        Long parentId = childParent.get(customer.getPartnerId());
+                        if (parentId != null) {
+                            Partner child = children.stream().filter(row -> row.getId().equals(customer.getPartnerId())).findFirst().orElse(null);
+                            if (child != null && child.getCustomerId().equals(customer.getId())) {
+                                return;
+                            }
+                            indirectCount.merge(parentId, 1, Integer::sum);
+                        }
+                    });
+        }
+        Map<Long, String> parentNames = new HashMap<>();
+        List<Long> parentIds = rows.stream().map(Partner::getParentId).filter(id -> id != null).distinct().toList();
+        if (!parentIds.isEmpty()) {
+            List<Partner> parents = partnerMapper.selectBatchIds(parentIds);
+            fillIdentity(parents);
+            parents.forEach(parent -> parentNames.put(parent.getId(), parent.getName()));
+        }
+        rows.forEach(row -> {
+            BigDecimal d = direct.getOrDefault(row.getId(), BigDecimal.ZERO);
+            BigDecimal i = indirect.getOrDefault(row.getId(), BigDecimal.ZERO);
+            BigDecimal o = other.getOrDefault(row.getId(), BigDecimal.ZERO);
+            BigDecimal total = d.add(i).add(o);
+            BigDecimal taken = paid.getOrDefault(row.getId(), BigDecimal.ZERO);
+            row.setDirectAmount(d);
+            row.setIndirectAmount(i);
+            row.setOtherAmount(o);
+            row.setCommissionAmount(total);
+            row.setWithdrawnAmount(taken);
+            row.setBalanceAmount(total.subtract(taken));
+            row.setDealCount(deals.getOrDefault(row.getId(), 0L));
+            row.setDirectCount(directCount.getOrDefault(row.getId(), 0));
+            row.setIndirectCount(indirectCount.getOrDefault(row.getId(), 0));
+            row.setParentName(parentNames.get(row.getParentId()));
+        });
+    }
+
+    private Long validParent(Long selfId, Long parentId) {
+        if (parentId == null) {
+            return null;
+        }
+        Partner parent = must(parentId);
+        if (parent.getStatus() == null || parent.getStatus() != 1) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "上级合伙人已停用");
+        }
+        Long cursor = parentId;
+        for (int i = 0; i < 8 && cursor != null; i++) {
+            if (cursor.equals(selfId)) {
+                throw new BizException(ErrorCode.OPERATION_FAILED, "不能把下级设成上级");
+            }
+            Partner current = partnerMapper.selectById(cursor);
+            cursor = current == null ? null : current.getParentId();
+        }
+        return parentId;
+    }
+
+    private PartnerWithdraw createWithdraw(Long partnerId, BigDecimal amount, String remark, String status) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "提现金额要大于 0");
+        }
+        BigDecimal value = amount.setScale(2, RoundingMode.HALF_UP);
+        Partner partner = must(partnerId);
+        fillStats(List.of(partner));
+        BigDecimal available = nz(partner.getBalanceAmount()).subtract(pendingAmount(partnerId));
+        if (value.compareTo(available) > 0) {
+            throw new BizException(ErrorCode.OPERATION_FAILED, "超过可提现余额");
+        }
+        PartnerWithdraw row = new PartnerWithdraw();
+        row.setPartnerId(partnerId);
+        row.setAmount(value);
+        row.setStatus(status);
+        row.setRemark(StringUtils.hasText(remark) ? remark.trim() : null);
+        withdrawMapper.insert(row);
+        return row;
+    }
+
+    private BigDecimal pendingAmount(Long partnerId) {
+        return withdrawMapper.selectList(Wrappers.<PartnerWithdraw>lambdaQuery()
+                        .eq(PartnerWithdraw::getPartnerId, partnerId)
+                        .eq(PartnerWithdraw::getStatus, PartnerWithdraw.PENDING))
+                .stream().map(PartnerWithdraw::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private void fillIdentity(List<Partner> rows) {

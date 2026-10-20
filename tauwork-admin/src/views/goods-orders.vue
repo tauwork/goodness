@@ -35,10 +35,11 @@
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="120" show-overflow-tooltip />
         <el-table-column prop="createTime" label="下单时间" width="170" />
-        <el-table-column label="操作" width="180">
+        <el-table-column label="更改状态" width="150">
           <template #default="{ row }">
-            <el-button v-if="row.status === 'PAID'" size="small" type="success" @click="change(row, 'DONE')">标记已交付</el-button>
-            <el-button v-if="row.status === 'PAID' || row.status === 'PENDING_PAY'" size="small" plain type="danger" @click="change(row, 'CANCELED')">取消</el-button>
+            <el-select :model-value="row.status" size="small" style="width:120px" :disabled="row.status === 'CANCELED'" @change="next => change(row, next)">
+              <el-option v-for="item in statusOptions" :key="item" :label="statusText(item)" :value="item" />
+            </el-select>
           </template>
         </el-table-column>
       </el-table>
@@ -58,11 +59,22 @@ async function load() {
   list.value = await http.get('/admin/goods-order/list', { params: { status: status.value || undefined } })
 }
 
+const statusOptions = ['PENDING_PAY', 'PAID', 'DONE', 'CANCELED']
+
 async function change(row, next) {
-  const label = next === 'DONE' ? '确认已把商品交付给客户？' : '确认取消？已支付订单会退款并退回库存'
-  await ElMessageBox.confirm(label, '操作确认', { type: 'warning' })
-  await http.put(`/admin/goods-order/${row.id}/status/${next}`)
-  ElMessage.success(next === 'DONE' ? '已交付' : '已取消')
+  if (next === row.status) return
+  const label = {
+    PAID: '确认改为已支付？会计入收款',
+    DONE: '确认改为已交付？',
+    CANCELED: '确认取消？已支付订单会退款并退回库存'
+  }[next] || '确认更改订单状态？'
+  try {
+    await ElMessageBox.confirm(label, '更改状态', { type: 'warning' })
+    await http.put(`/admin/goods-order/${row.id}/status/${next}`)
+    ElMessage.success('状态已更新')
+  } catch (e) {
+    if (e !== 'cancel' && e?.message && e.message !== 'cancel') ElMessage.error(e.message)
+  }
   load()
 }
 

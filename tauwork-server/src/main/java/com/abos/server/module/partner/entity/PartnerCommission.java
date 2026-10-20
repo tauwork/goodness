@@ -17,6 +17,10 @@ public class PartnerCommission extends BaseEntity {
     public static final String REVERSED = "REVERSED";
     public static final String SOURCE_ORDER = "ORDER";
     public static final String SOURCE_MANUAL = "MANUAL";
+    public static final String SOURCE_OTHER = "OTHER";
+    public static final String LEVEL_DIRECT = "DIRECT";
+    public static final String LEVEL_INDIRECT = "INDIRECT";
+    public static final String LEVEL_OTHER = "OTHER";
 
     private Long partnerId;
     private Long customerId;
@@ -31,6 +35,9 @@ public class PartnerCommission extends BaseEntity {
     private BigDecimal commissionAmount;
     private String status;
     private String source;
+    /** DIRECT / INDIRECT / OTHER */
+    private String level;
+    private Long refCommissionId;
 
     @TableField(exist = false)
     private String customerName;

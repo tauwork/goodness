@@ -19,7 +19,11 @@
     { "path": "pages/assess/result", "style": { "navigationBarTitleText": "评估报告" } },
     { "path": "pages/me/family", "style": { "navigationBarTitleText": "家庭档案" } },
     { "path": "pages/me/phone", "style": { "navigationBarTitleText": "绑定手机号" } },
-    { "path": "pages/me/partner", "style": { "navigationBarTitleText": "我的分销", "enableShareAppMessage": true } }
+    { "path": "pages/me/partner", "style": { "navigationBarTitleText": "我的分销" } },
+    { "path": "pages/me/partner-poster", "style": { "navigationBarTitleText": "合伙人海报", "navigationBarBackgroundColor": "#C4151C", "navigationBarTextStyle": "white", "enableShareAppMessage": true } },
+    { "path": "pages/me/partner-commission", "style": { "navigationBarTitleText": "我的佣金" } },
+    { "path": "pages/me/partner-customers", "style": { "navigationBarTitleText": "我的客户" } },
+    { "path": "pages/me/partner-join", "style": { "navigationBarTitleText": "成为合伙人" } }
   ],
   "globalStyle": {
     "navigationBarBackgroundColor": "#F3EEE6",

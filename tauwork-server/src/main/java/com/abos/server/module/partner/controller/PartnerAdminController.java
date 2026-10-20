@@ -7,6 +7,7 @@ import com.abos.server.module.partner.dto.PartnerSaveDTO;
 import com.abos.server.module.partner.entity.Partner;
 import com.abos.server.module.partner.entity.PartnerCommission;
 import com.abos.server.module.partner.entity.PartnerRule;
+import com.abos.server.module.partner.entity.PartnerWithdraw;
 import com.abos.server.module.partner.service.PartnerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -69,6 +70,22 @@ public class PartnerAdminController {
         return Result.ok();
     }
 
+    @PostMapping("/{id}/other")
+    public Result<PartnerCommission> other(@PathVariable Long id, @RequestBody PartnerSaveDTO dto) {
+        return Result.ok(partnerService.recordOther(id, dto.getAmount(), dto.getRemark()));
+    }
+
+    @PostMapping("/{id}/withdraw")
+    public Result<PartnerWithdraw> withdraw(@PathVariable Long id, @RequestBody PartnerSaveDTO dto) {
+        return Result.ok(partnerService.recordWithdraw(id, dto.getAmount(), dto.getRemark()));
+    }
+
+    @PutMapping("/withdraw/{id}/{status}")
+    public Result<Void> reviewWithdraw(@PathVariable Long id, @PathVariable String status) {
+        partnerService.reviewWithdraw(id, status);
+        return Result.ok();
+    }
+
     @GetMapping("/rule/list")
     public Result<List<PartnerRule>> rules() {
         return Result.ok(partnerService.rules());
@@ -76,6 +93,6 @@ public class PartnerAdminController {
 
     @PostMapping("/rule")
     public Result<PartnerRule> saveRule(@RequestBody PartnerSaveDTO dto) {
-        return Result.ok(partnerService.saveRule(dto.getCategoryId(), dto.getRate()));
+        return Result.ok(partnerService.saveRule(dto.getCategoryId(), dto.getRate(), dto.getRateL2()));
     }
 }

@@ -1,6 +1,7 @@
 package com.abos.server.module.file.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaMode;
 import com.abos.server.common.result.Result;
 import com.abos.server.module.file.dto.StoredFile;
 import com.abos.server.module.file.service.FileStorageService;
@@ -22,7 +23,7 @@ public class FileAdminController {
     private final FileStorageService fileStorageService;
 
     @PostMapping("/upload")
-    @SaCheckPermission("product:manage")
+    @SaCheckPermission(value = {"product:manage", "cms:manage", "space:manage", "contract:manage"}, mode = SaMode.OR)
     public Result<StoredFile> upload(@RequestParam("file") MultipartFile file) {
         return Result.ok(fileStorageService.store(file));
     }

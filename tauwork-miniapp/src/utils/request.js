@@ -71,6 +71,8 @@ function doLogin(code, resolve, reject) {
 }
 
 export function capturePartner(options) {
+  const path = (options && options.path) || ''
+  if (String(path).indexOf('partner-join') >= 0) return
   const query = (options && options.query) || {}
   let code = query.partner || ''
   const scene = query.scene || (options && options.scene) || ''

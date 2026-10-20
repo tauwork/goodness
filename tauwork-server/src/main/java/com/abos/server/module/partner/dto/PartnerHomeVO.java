@@ -1,6 +1,5 @@
 package com.abos.server.module.partner.dto;
 
-import com.abos.server.module.customer.entity.Customer;
 import com.abos.server.module.partner.entity.PartnerCommission;
 import lombok.Data;
 
@@ -11,11 +10,20 @@ import java.util.List;
 public class PartnerHomeVO {
     private boolean partner;
     private String name;
+    private String phone;
     private String code;
     private String sharePath;
+    private String joinPath;
     private BigDecimal commissionAmount;
-    private long dealCount;
+    private BigDecimal directAmount;
+    private BigDecimal indirectAmount;
+    private BigDecimal otherAmount;
+    private BigDecimal withdrawnAmount;
+    private BigDecimal pendingAmount;
+    private BigDecimal balanceAmount;
     private int customerCount;
-    private List<Customer> customers;
+    private int directCount;
+    private int indirectCount;
+    private List<PartnerCustomerVO> customers;
     private List<PartnerCommission> deals;
 }

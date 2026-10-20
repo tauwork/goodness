@@ -14,5 +14,8 @@ public class PartnerSaveDTO {
     private BigDecimal amount;
     private Long categoryId;
     private BigDecimal rate;
+    private BigDecimal rateL2;
+    private Long parentId;
+    private String remark;
     private String code;
 }

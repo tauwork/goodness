@@ -1,6 +1,7 @@
 package com.abos.server.module.goods.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaMode;
 import com.abos.server.common.result.Result;
 import com.abos.server.module.goods.entity.GoodsOrder;
 import com.abos.server.module.goods.service.GoodsOrderService;
@@ -25,7 +26,7 @@ public class GoodsOrderAdminController {
     }
 
     @PutMapping("/{id}/status/{status}")
-    @SaCheckPermission("product:manage")
+    @SaCheckPermission(value = {"product:manage", "order:manage"}, mode = SaMode.OR)
     public Result<GoodsOrder> changeStatus(@PathVariable Long id, @PathVariable String status) {
         return Result.ok(goodsOrderService.changeStatus(id, status));
     }

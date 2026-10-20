@@ -14,7 +14,6 @@
         :key="collapsed ? 'collapsed' : 'expanded'"
         :collapse="collapsed"
         :collapse-transition="false"
-        unique-opened
         router
         class="menu"
         popper-class="side-pop"
@@ -66,14 +65,14 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowDown, Avatar, Bell, Box, Briefcase, Calendar, ChatLineSquare, Coin, DataLine,
-  EditPen, Expand, Flag, Fold, Goods, House, Location, Lock, Notebook, OfficeBuilding,
-  Odometer, Picture, Setting, Share, ShoppingBag, Tickets, User, UserFilled
+  Document, EditPen, Expand, Finished, Flag, Fold, Goods, HomeFilled, House, Location, Lock, Money, Notebook, OfficeBuilding,
+  Odometer, Picture, Setting, Share, ShoppingBag, Tickets, User, UserFilled, Wallet
 } from '@element-plus/icons-vue'
 import http from '../utils/http'
 
 const COLLAPSE_KEY = 'abos-menu-collapsed'
 const icons = {
-  DataLine, Odometer, User, Avatar, Flag, Calendar, EditPen, Location, Tickets, OfficeBuilding,
+  DataLine, Odometer, User, Avatar, Flag, Calendar, EditPen, Location, Tickets, HomeFilled, OfficeBuilding, Document, Finished, Wallet, Money,
   Box, Goods, Briefcase, House, ShoppingBag, Notebook, Picture, ChatLineSquare, Bell,
   Setting, UserFilled, Lock, Share, Coin
 }

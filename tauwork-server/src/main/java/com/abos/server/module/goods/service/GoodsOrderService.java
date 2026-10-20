@@ -180,20 +180,32 @@ public class GoodsOrderService {
         if (goodsOrder == null) {
             throw new BizException(ErrorCode.ORDER_NOT_FOUND, "商品订单不存在");
         }
+        if (status.equals(goodsOrder.getStatus())) {
+            return goodsOrder;
+        }
         switch (status) {
+            case GoodsOrder.PAID -> {
+                if (GoodsOrder.DONE.equals(goodsOrder.getStatus())) {
+                    goodsOrder.setStatus(GoodsOrder.PAID);
+                    goodsOrderMapper.updateById(goodsOrder);
+                } else {
+                    require(goodsOrder, GoodsOrder.PENDING_PAY);
+                    handlePaySuccess(goodsOrder.getOrderNo());
+                }
+            }
             case GoodsOrder.DONE -> {
                 require(goodsOrder, GoodsOrder.PAID);
                 goodsOrder.setStatus(GoodsOrder.DONE);
                 goodsOrderMapper.updateById(goodsOrder);
             }
             case GoodsOrder.CANCELED -> cancel(goodsOrder, null);
-            default -> throw new BizException(ErrorCode.ORDER_STATUS_INVALID, "仅支持 DONE/CANCELED");
+            default -> throw new BizException(ErrorCode.ORDER_STATUS_INVALID, "不能改成这个状态");
         }
         return goodsOrderMapper.selectById(id);
     }
 
     private void cancel(GoodsOrder goodsOrder, Long operatorId) {
-        require(goodsOrder, GoodsOrder.PENDING_PAY, GoodsOrder.PAID);
+        require(goodsOrder, GoodsOrder.PENDING_PAY, GoodsOrder.PAID, GoodsOrder.DONE);
         Order order = orderMapper.selectById(goodsOrder.getOrderId());
         boolean paid = order != null && "PAID".equals(order.getPayStatus());
         goodsOrder.setStatus(GoodsOrder.CANCELED);

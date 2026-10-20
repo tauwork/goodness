@@ -2,7 +2,7 @@
   <el-card shadow="never">
     <template #header>
       <div style="display:flex;align-items:center;gap:12px">
-        <b>社区</b>
+        <b>社区管理</b>
         <span style="color:#8A94A8;font-size:12px">上架后出现在小程序，按城市、封面、地址和坐标展示</span>
         <el-button style="margin-left:auto" type="primary" @click="openCreate">新建社区</el-button>
       </div>
