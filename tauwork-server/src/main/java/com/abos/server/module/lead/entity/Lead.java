@@ -19,6 +19,8 @@ public class Lead extends BaseEntity {
     /** ASSESS/BOOKING/CONTENT/REFERRAL/EVENT/RENEWAL_CAL */
     private String source;
     private String intent;
+    /** 1v1 咨询的需求描述 */
+    private String remark;
     private Integer assessScore;
     /** NEW/ASSIGNED/IN_PROGRESS/CONVERTED/PUBLIC_POOL */
     private String status;

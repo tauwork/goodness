@@ -26,6 +26,9 @@
       <el-table-column label="分类" width="140">
         <template #default="{ row }">{{ catName(row.categoryId) }}</template>
       </el-table-column>
+      <el-table-column v-if="prodType === 'SERVICE'" label="对接顾问" width="120">
+        <template #default="{ row }">{{ consultantName(row.consultantId) }}</template>
+      </el-table-column>
       <el-table-column label="价格" width="130">
         <template #default="{ row }">
           <span v-if="row.priceValue != null">¥{{ row.priceValue }}</span>
@@ -61,6 +64,11 @@
       <el-form-item label="分类" required>
         <el-select v-model="form.categoryId" placeholder="选择分类" style="width:100%">
           <el-option v-for="c in cats" :key="c.id" :label="c.name" :value="c.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item v-if="prodType === 'SERVICE'" label="对接顾问">
+        <el-select v-model="form.consultantId" clearable filterable placeholder="1v1 咨询展示这位顾问" style="width:100%">
+          <el-option v-for="c in consultants" :key="c.id" :label="consultantLabel(c)" :value="c.id" />
         </el-select>
       </el-form-item>
       <el-form-item :label="prodType === 'GOODS' ? '主图' : '主图'" :required="prodType === 'GOODS'">
@@ -147,8 +155,15 @@
 
   <el-dialog v-model="catDialog" title="分类" width="520px">
     <el-table :data="allCats" size="small">
-      <el-table-column prop="name" label="名称" />
-      <el-table-column prop="code" label="编码" width="140" />
+      <el-table-column prop="name" label="名称" width="140" />
+      <el-table-column v-if="prodType === 'SERVICE'" label="对接顾问" min-width="180">
+        <template #default="{ row }">
+          <el-select v-model="row.consultantId" clearable filterable size="small" placeholder="未指定" style="width:100%" @change="saveCatConsultant(row)">
+            <el-option v-for="c in consultants" :key="c.id" :label="consultantLabel(c)" :value="c.id" />
+          </el-select>
+        </template>
+      </el-table-column>
+      <el-table-column v-else prop="code" label="编码" width="140" />
       <el-table-column label="状态" width="80">
         <template #default="{ row }">{{ row.status === 1 ? '启用' : '停用' }}</template>
       </el-table-column>
@@ -178,6 +193,7 @@ const title = computed(() => route.meta.title)
 const list = ref([])
 const allCats = ref([])
 const cats = ref([])
+const consultants = ref([])
 const keyword = ref('')
 const categoryId = ref(null)
 const dialog = ref(false)
@@ -196,6 +212,7 @@ function blank() {
     name: '',
     subtitle: '',
     categoryId: null,
+    consultantId: null,
     coverUrl: '',
     detail: '',
     priceMode: 'FIXED',
@@ -228,10 +245,21 @@ async function load() {
   list.value = page.records
   allCats.value = categories
   cats.value = categories.filter(c => c.status === 1)
+  if (type === 'SERVICE') {
+    consultants.value = await http.get('/admin/consultant/list')
+  }
 }
 
 function catName(id) {
   return allCats.value.find(c => c.id === id)?.name || '-'
+}
+
+function consultantName(id) {
+  return consultants.value.find(c => c.id === id)?.name || '—'
+}
+
+function consultantLabel(c) {
+  return c.title ? `${c.name} · ${c.title}` : c.name
 }
 
 function openCreate() {
@@ -248,6 +276,7 @@ async function openEdit(row) {
     name: row.name,
     subtitle: row.subtitle,
     categoryId: row.categoryId,
+    consultantId: row.consultantId || null,
     coverUrl: row.coverUrl || '',
     detail: row.detail || '',
     priceMode: row.priceMode || 'FIXED',
@@ -287,7 +316,8 @@ async function save() {
       coverUrl: form.coverUrl || null,
       stock: prodType.value === 'GOODS' ? form.stock : null,
       spec: prodType.value === 'GOODS' ? (form.spec || null) : null,
-      priceMode: prodType.value === 'GOODS' ? 'FIXED' : form.priceMode
+      priceMode: prodType.value === 'GOODS' ? 'FIXED' : form.priceMode,
+      consultantId: prodType.value === 'SERVICE' ? (form.consultantId || null) : null
     }
     const saved = form.id ? await http.put('/admin/product', payload) : await http.post('/admin/product', payload)
     form.id = saved.id
@@ -333,6 +363,16 @@ function onUploaded(res) {
 
 function onUploadError() {
   ElMessage.error('上传失败')
+}
+
+async function saveCatConsultant(row) {
+  try {
+    await http.put('/admin/product-category', { ...row, consultantId: row.consultantId || null })
+    ElMessage.success('已保存顾问')
+  } catch (e) {
+    ElMessage.error(e.message)
+    load()
+  }
 }
 
 async function addCat() {

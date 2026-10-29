@@ -49,6 +49,8 @@ export default {
   data() {
     return {
       menus: [
+        { icon: '/static/icons/calendar.png', title: '我的订单', sub: '服务下单、支付和到账进度', url: '/pages/me/orders' },
+        { icon: '/static/icons/home-company.png', title: '我的业务', sub: '公司注册进度和资料提交', url: '/pages/me/business' },
         { icon: '/static/icons/calendar.png', title: '我的预订', sub: '社区、咨询与商品订单', url: '/pages/me/bookings' },
         { icon: '/static/icons/phone.png', title: '绑定手机号', sub: '顾问回访与进度通知', url: '/pages/me/phone' },
         { icon: '/static/icons/family.png', title: '家庭档案', sub: '为评估准备家庭情况', url: '/pages/me/family' },

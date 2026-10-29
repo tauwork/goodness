@@ -40,7 +40,8 @@ public class LeadService {
                         .and(StringUtils.hasText(keyword), w -> w
                                 .like(Lead::getName, keyword)
                                 .or().like(Lead::getPhone, keyword)
-                                .or().like(Lead::getIntent, keyword))
+                                .or().like(Lead::getIntent, keyword)
+                                .or().like(Lead::getRemark, keyword))
                         .orderByDesc(Lead::getCreateTime));
         fill(result.getRecords());
         return result;

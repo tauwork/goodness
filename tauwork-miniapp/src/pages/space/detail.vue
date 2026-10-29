@@ -11,10 +11,10 @@
     </view>
 
     <view class="card sheet">
-      <view class="attrs">
+      <view class="attrs" v-if="attrsList.length">
         <text class="tag" v-for="(v, k) in attrsList" :key="k">{{ v }}</text>
       </view>
-      <view class="price">¥{{ p.price }} <text class="unit">/ {{ unitText(p.priceUnit) }}</text></view>
+      <view class="price" v-if="p.price != null">¥{{ money(p.price) }} <text class="unit">/ {{ unitText(p.priceUnit) }}</text></view>
     </view>
 
     <view class="card">
@@ -100,6 +100,12 @@ export default {
   },
   methods: {
     unitText(u) { return { HOUR: '小时', DAY: '天', MONTH: '月', ONCE: '场' }[u] || '次' },
+    money(v) {
+      const n = Number(v)
+      if (Number.isNaN(n)) return v
+      const s = n.toFixed(2)
+      return s.endsWith('.00') ? String(Math.round(n)) : s
+    },
     async submit() {
       if (this.isHour && !this.form.startTime) return uni.showToast({ title: '请选择开始时间', icon: 'none' })
       const data = await api.post('/api/mini/booking', {

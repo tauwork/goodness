@@ -17,7 +17,13 @@
       }
     },
     "requiredPrivateInfos": ["getLocation"],
-    "usingComponents": true
+    "usingComponents": true,
+    "plugins": {
+      "contactPlugin": {
+        "version": "1.4.3",
+        "provider": "wx104a1a20c3f81ec2"
+      }
+    }
   },
   "vueVersion": "3"
 }

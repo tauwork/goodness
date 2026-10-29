@@ -1,6 +1,7 @@
 package com.abos.server.module.team.entity;
 
 import com.abos.server.common.base.BaseEntity;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -19,6 +20,11 @@ public class Consultant extends BaseEntity {
     private String valueService;
     /** 性格特点 */
     private String personality;
+    /** 展示在小程序 1v1 咨询 */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private String wechat;
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private String phone;
     private Long communityId;
 
     @TableField(exist = false)

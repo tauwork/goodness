@@ -3,9 +3,11 @@ package com.abos.server.module.finance.controller;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.abos.server.common.result.Result;
 import com.abos.server.module.finance.entity.DepositRecord;
+import com.abos.server.module.finance.entity.FinanceAccount;
 import com.abos.server.module.finance.entity.ReceivableBill;
 import com.abos.server.module.finance.entity.RevenueSettlement;
 import com.abos.server.module.finance.service.DepositService;
+import com.abos.server.module.finance.service.FinanceAccountService;
 import com.abos.server.module.finance.service.ReceivableService;
 import com.abos.server.module.finance.service.SettlementService;
 import lombok.Data;
@@ -23,6 +25,18 @@ public class FinanceAdminController {
     private final DepositService depositService;
     private final ReceivableService receivableService;
     private final SettlementService settlementService;
+    private final FinanceAccountService financeAccountService;
+
+    @GetMapping("/account")
+    public Result<FinanceAccount> account() {
+        return Result.ok(financeAccountService.get());
+    }
+
+    @PutMapping("/account")
+    @SaCheckPermission("finance:manage")
+    public Result<FinanceAccount> saveAccount(@RequestBody FinanceAccount account) {
+        return Result.ok(financeAccountService.save(account));
+    }
 
     @GetMapping("/deposit/list")
     public Result<List<DepositRecord>> deposits(@RequestParam(required = false) String kind,

@@ -1,6 +1,8 @@
 package com.abos.server.module.product.entity;
 
 import com.abos.server.common.base.BaseEntity;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,6 +22,9 @@ public class SvcProduct extends BaseEntity {
     private String prodType;
     /** 分类 product_category.id */
     private Long categoryId;
+    /** 1v1 咨询对接顾问 */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private Long consultantId;
     /** IDENTITY/EDU/STARTUP（服务分类编码，兼容旧数据；新数据用 categoryId） */
     private String bizLine;
     private String name;

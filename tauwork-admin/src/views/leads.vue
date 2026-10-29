@@ -24,7 +24,8 @@
           <span v-else>—</span>
         </template>
       </el-table-column>
-      <el-table-column prop="intent" label="业务意向" min-width="180" show-overflow-tooltip />
+      <el-table-column prop="intent" label="业务意向" min-width="160" show-overflow-tooltip />
+      <el-table-column prop="remark" label="需求描述" min-width="200" show-overflow-tooltip />
       <el-table-column label="状态" width="100">
         <template #default="{ row }">
           <el-tag :type="tagType(row.status)" size="small" effect="dark">{{ statusMap[row.status] }}</el-tag>
@@ -63,7 +64,7 @@ const list = ref([])
 const q = reactive({ status: null, keyword: '' })
 
 const statusMap = { NEW: '新线索', ASSIGNED: '已分配', IN_PROGRESS: '跟进中', CONVERTED: '已成交', PUBLIC_POOL: '公海池' }
-const sourceMap = { ASSESS: '智能评估', BOOKING: '咨询预约', CONTENT: '内容留资', REFERRAL: '转介绍', EVENT: '沙龙活动', RENEWAL_CAL: '续签日历' }
+const sourceMap = { ASSESS: '智能评估', BOOKING: '咨询预约', CONSULT: '1v1咨询', CONTENT: '内容留资', REFERRAL: '转介绍', EVENT: '沙龙活动', RENEWAL_CAL: '续签日历' }
 
 async function load() {
   const page = await http.get('/admin/lead/page', { params: { page: 1, size: 50, status: q.status || undefined, keyword: q.keyword || undefined } })

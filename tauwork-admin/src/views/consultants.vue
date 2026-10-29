@@ -19,8 +19,10 @@
       <el-table-column prop="name" label="姓名" width="120" />
       <el-table-column prop="title" label="头衔" width="140" show-overflow-tooltip />
       <el-table-column prop="valueService" label="价值服务" min-width="200" show-overflow-tooltip />
-      <el-table-column prop="personality" label="性格特点" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="communityName" label="归属社区" width="180" />
+      <el-table-column prop="personality" label="性格特点" min-width="160" show-overflow-tooltip />
+      <el-table-column prop="wechat" label="微信" width="140" show-overflow-tooltip />
+      <el-table-column prop="phone" label="电话" width="130" />
+      <el-table-column prop="communityName" label="归属社区" width="160" />
       <el-table-column label="操作" width="140" fixed="right">
         <template #default="{ row }">
           <el-button size="small" link type="primary" @click="openEdit(row)">编辑</el-button>
@@ -52,6 +54,12 @@
         <el-form-item label="性格特点">
           <el-input v-model="form.personality" type="textarea" :rows="2" maxlength="500" placeholder="沟通风格、性格特点" />
         </el-form-item>
+        <el-form-item label="微信号">
+          <el-input v-model="form.wechat" maxlength="64" placeholder="小程序 1v1 咨询展示" />
+        </el-form-item>
+        <el-form-item label="联系电话">
+          <el-input v-model="form.phone" maxlength="20" placeholder="小程序 1v1 咨询展示" />
+        </el-form-item>
         <el-form-item label="归属社区" required>
           <el-select v-model="form.communityId" filterable style="width:100%">
             <el-option v-for="item in communities" :key="item.id" :label="item.name" :value="item.id" />
@@ -80,7 +88,7 @@ const form = ref({})
 const uploadHeaders = computed(() => ({ Authorization: localStorage.getItem('token') || '' }))
 
 function blank() {
-  return { id: null, name: '', avatarUrl: '', title: '', valueService: '', personality: '', communityId: communityId.value }
+  return { id: null, name: '', avatarUrl: '', title: '', valueService: '', personality: '', wechat: '', phone: '', communityId: communityId.value }
 }
 
 async function load() {

@@ -1,134 +1,127 @@
 <template>
   <view class="home">
-    <view class="hero">
-      <image class="hero-bg" src="/static/visual/harbor.jpg" mode="aspectFill" />
-      <view class="hero-shade"></view>
-      <view class="hero-inner" :style="{ paddingTop: (statusBar + 8) + 'px', paddingRight: capsulePad + 'px' }">
-        <view class="brand">
-          <image class="logo" src="/static/logo.png" mode="aspectFill" />
-          <view>
-            <view class="brand-en">GOODNESS</view>
-            <view class="brand-cn">九千善</view>
-          </view>
-        </view>
-        <view class="hero-copy">
-          <view class="hero-kicker">HONG KONG  ·  SHENZHEN</view>
-          <view class="hero-title">跨境生活</view>
-          <view class="hero-title">安放在同一处</view>
-          <view class="hero-desc lead">身份、公司与教育</view>
-          <view class="hero-desc">以及可以坐下的社区</view>
+    <view class="nav" :style="{ paddingTop: statusBar + 'px', paddingRight: capsulePad + 'px' }">
+      <view class="brand-row">
+        <image class="brand-logo" :src="logo" mode="aspectFit" />
+        <view>
+          <view class="brand">九千善</view>
+          <view class="brand-sub">跨境创业与生活服务平台</view>
         </view>
       </view>
     </view>
 
-    <view class="panel">
+    <swiper v-if="banners.length" class="banner" :circular="banners.length > 1" autoplay :interval="5000"
+            :indicator-dots="banners.length > 1" indicator-color="rgba(255,255,255,.45)" indicator-active-color="#ffffff">
+      <swiper-item v-for="b in banners" :key="b.id">
+        <view class="slide" @tap="onBanner(b)">
+          <image class="slide-img" :src="b.image" mode="aspectFill" />
+          <view class="slide-shade"></view>
+          <view class="slide-copy">
+            <view class="slide-title">{{ b.title }}</view>
+            <view class="slide-sub" v-if="b.subtitle">{{ b.subtitle }}</view>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+
+    <view class="sheet">
+      <view class="section-title">快捷服务</view>
       <view class="quick">
-        <view class="qi" v-for="q in quicks" :key="q.label" @tap="go(q.url)">
-          <image class="qimg" :src="q.img" mode="aspectFill" />
+        <view class="qi" v-for="q in quicks" :key="q.key" @tap="openQuick(q)">
+          <view class="qicon">
+            <image class="qimg" :src="q.icon" mode="aspectFit" />
+          </view>
           <text class="ql">{{ q.label }}</text>
-          <text class="qe">{{ q.en }}</text>
         </view>
-      </view>
-
-      <view class="block" v-if="banners.length">
-        <text class="kicker">SELECTED</text>
-        <text class="block-title">此刻推荐</text>
-      </view>
-      <swiper v-if="banners.length" class="banner" :circular="banners.length > 1" autoplay :interval="4800" @change="e => cur = e.detail.current">
-        <swiper-item v-for="b in banners" :key="b.id">
-          <view class="slide" @tap="onBanner(b)">
-            <image class="slide-img" :src="b.image" mode="aspectFill" />
-            <view class="slide-shade"></view>
-            <view class="slide-copy">
-              <text class="slide-badge" v-if="b.badge">{{ b.badge }}</text>
-              <view class="slide-title">{{ b.title }}</view>
-              <view class="slide-sub">{{ b.subtitle }}</view>
-            </view>
-            <text v-if="banners.length > 1" class="slide-idx">{{ pad(cur + 1) }} / {{ pad(banners.length) }}</text>
+        <view class="qi contact">
+          <view class="qicon">
+            <image class="qimg" src="/static/icons/home-consult.png" mode="aspectFit" />
           </view>
-        </swiper-item>
-      </swiper>
+          <text class="ql">1V1咨询</text>
+          <cell
+            class="contact-hit"
+            plugid="790fd0f846a7e2ac117c8c1bee554bb1"
+            styleType="2"
+            blockStyle="button"
+            buttonStyle="light"
+            @completemessage="onContactDone"
+          />
+        </view>
+      </view>
+    </view>
 
-      <view class="block" v-if="communities.length">
-        <text class="kicker">COMMUNITIES</text>
-        <view class="block-row">
-          <text class="block-title">社区</text>
-          <text class="block-meta">{{ communities.length }} 处</text>
+    <view class="sheet" v-if="hotCommunities.length">
+      <view class="section-head">
+        <text class="section-title">社区</text>
+        <text class="more" @tap="go('/pages/space/space')">全部</text>
+      </view>
+      <view class="places">
+        <view class="place" v-for="c in hotCommunities" :key="c.id" @tap="goSpace(c.id)">
+          <image class="place-img" :src="c.image" mode="aspectFill" />
+          <view class="place-name">{{ c.name }}</view>
+          <view class="place-addr">{{ c.district || c.city || '' }}</view>
         </view>
       </view>
-      <view class="loc" v-for="c in communities" :key="c.id" @tap="goSpace(c.id)">
-        <image class="loc-img" :src="c.image" mode="aspectFill" />
-        <view class="loc-shade"></view>
-        <view class="loc-copy">
-          <view class="loc-name">{{ c.name }}</view>
-          <view class="loc-addr">{{ c.address }}</view>
-          <view class="loc-hours">{{ c.openHours }}</view>
-        </view>
-      </view>
+    </view>
 
-      <view class="block" v-if="stories.length">
-        <text class="kicker">STORIES</text>
-        <view class="block-row">
-          <text class="block-title">客户故事</text>
-          <text class="block-more" @tap="go('/pages/story/list')">全部</text>
-        </view>
+    <view class="sheet" v-if="stories.length">
+      <view class="section-head">
+        <text class="section-title">客户故事</text>
+        <text class="more" @tap="go('/pages/story/list')">全部</text>
       </view>
-      <scroll-view v-if="stories.length" scroll-x class="stories" :show-scrollbar="false">
-        <view class="story" v-for="s in stories" :key="s.id" @tap="go(`/pages/story/detail?id=${s.id}`)">
-          <image class="story-img" :src="s.image" mode="aspectFill" />
-          <view class="story-body">
-            <view class="story-title">{{ s.title }}</view>
-            <view class="story-foot">
-              <text class="story-badge" v-if="s.badge">{{ s.badge }}</text>
-              <text class="story-who">{{ s.subtitle }}</text>
+      <view class="stories-clip">
+        <scroll-view scroll-x class="stories" :show-scrollbar="false">
+          <view class="stories-row">
+            <view class="story" v-for="s in stories" :key="s.id" @tap="go(`/pages/story/detail?id=${s.id}`)">
+              <image class="story-img" :src="s.image" mode="aspectFill" />
+              <view class="story-title">{{ s.title }}</view>
+              <view class="story-who" v-if="s.subtitle">{{ s.subtitle }}</view>
             </view>
           </view>
-        </view>
-      </scroll-view>
-
-      <view class="block" v-if="news.length">
-        <text class="kicker">JOURNAL</text>
-        <view class="block-row">
-          <text class="block-title">公告资讯</text>
-          <text class="block-more" @tap="go('/pages/news/news')">全部</text>
-        </view>
+        </scroll-view>
       </view>
-      <view class="news" v-if="news.length">
+    </view>
+
+    <view class="sheet" v-if="news.length">
+      <view class="section-head">
+        <text class="section-title">最新资讯</text>
+        <text class="more" @tap="go('/pages/news/news')">全部</text>
+      </view>
+      <view class="news">
         <view class="nitem" v-for="n in news" :key="n.id" @tap="go(`/pages/news/detail?id=${n.id}`)">
-          <image class="nimg" :src="n.image" mode="aspectFill" />
           <view class="nbody">
             <view class="ntitle">{{ n.title }}</view>
-            <view class="sub">{{ (n.createTime || '').slice(0, 10) }}<text v-if="n.badge">  ·  {{ n.badge }}</text></view>
+            <view class="ndate">{{ (n.createTime || '').slice(0, 10) }}</view>
           </view>
+          <image v-if="n.image" class="nimg" :src="n.image" mode="aspectFill" />
         </view>
       </view>
-
-      <view class="colophon">
-        <text class="kicker">GOODNESS</text>
-        <text class="colo-cn">九千善 · 跨境创业一站式服务</text>
-      </view>
     </view>
+
   </view>
 </template>
 
 <script>
 import api, { BASE, capturePartner } from '../../utils/request'
-import { visual, communityImage, bannerImage, storyImage, newsImage, mediaUrl } from '../../utils/visual'
+import { communityImage, bannerImage, storyImage, newsImage, mediaUrl } from '../../utils/visual'
 
 export default {
   data() {
     return {
       banners: [], stories: [], news: [], communities: [],
-      cur: 0,
       statusBar: 20,
       capsulePad: 24,
+      logo: '/static/brand-logo.png',
       quicks: [
-        { img: visual.identity, label: '评估', en: 'ASSESS', url: '/pages/assess/assess' },
-        { img: visual.desk, label: '社区', en: 'PLACE', url: '/pages/space/space' },
-        { img: visual.company, label: '服务', en: 'SERVICE', url: '/pages/svc/svc' },
-        { img: visual.gift, label: '礼品', en: 'GIFT', url: '/pages/goods/list' },
-        { img: visual.journal, label: '预订', en: 'ORDERS', url: '/pages/me/bookings' }
+        { key: 'company', label: '公司注册', icon: '/static/icons/home-company.png', url: '/pages/svc/detail?categoryId=102' },
+        { key: 'assess', label: '身份评估', icon: '/static/icons/home-assess.png', url: '/pages/assess/assess' },
+        { key: 'book', label: '空间预订', icon: '/static/icons/home-book.png', url: '/pages/space/space' }
       ]
+    }
+  },
+  computed: {
+    hotCommunities() {
+      return this.communities.slice(0, 3)
     }
   },
   created() {
@@ -157,7 +150,7 @@ export default {
       }))
     })
     api.get('/api/mini/cms/story').then(d => {
-      this.stories = (d || []).map((s, i) => ({
+      this.stories = (d || []).slice(0, 8).map((s, i) => ({
         ...s,
         image: s.coverUrl ? mediaUrl(s.coverUrl, BASE) : storyImage(i)
       }))
@@ -169,11 +162,28 @@ export default {
       }))
     })
     api.get('/api/mini/space/community').then(d => {
-      this.communities = (d || []).map(c => ({ ...c, image: communityImage(c.name) }))
+      this.communities = (d || []).map(c => ({
+        ...c,
+        image: c.coverUrl ? mediaUrl(c.coverUrl, BASE) : communityImage(c.name)
+      }))
     })
   },
   methods: {
-    pad(n) { return String(n).padStart(2, '0') },
+    openQuick(q) {
+      this.go(q.url)
+    },
+    onContactDone(e) {
+      const detail = (e && e.detail) || {}
+      const code = Number(detail.errcode)
+      if (code === 0 || code === -3006) return
+      const msg = {
+        '-3002': '客服配置读取失败',
+        '-3004': '需要授权后才能联系客服',
+        '-3005': '客服消息发送失败',
+        '-3008': '暂未配置客服'
+      }[String(code)]
+      if (msg) uni.showToast({ title: msg, icon: 'none' })
+    },
     go(url) {
       const path = url.split('?')[0]
       const tabs = ['/pages/space/space', '/pages/svc/svc', '/pages/me/me', '/pages/index/index']
@@ -200,67 +210,64 @@ export default {
 </script>
 
 <style scoped>
-.hero { position: relative; height: 820rpx; }
-.hero-bg, .hero-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.hero-shade { background: linear-gradient(180deg, rgba(14, 18, 24, 0.28) 0%, rgba(14, 18, 24, 0.05) 38%, rgba(14, 18, 24, 0.78) 100%); }
-.hero-inner {
-  position: relative; z-index: 2; height: 100%; box-sizing: border-box;
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding-left: 40rpx; padding-bottom: 88rpx;
-}
-.brand { display: flex; align-items: center; gap: 18rpx; }
-.logo { width: 72rpx; height: 72rpx; border-radius: 18rpx; }
-.brand-en { color: rgba(255,255,255,.72); font-size: 18rpx; letter-spacing: 6rpx; }
-.brand-cn { color: #fff; font-size: 32rpx; margin-top: 2rpx; }
-.hero-kicker { color: #E7D3AE; font-size: 20rpx; letter-spacing: 5rpx; margin-bottom: 18rpx; }
-.hero-title { color: #F7F3EC; font-size: 64rpx; font-weight: 500; line-height: 1.18; letter-spacing: 2rpx; }
-.hero-desc { color: rgba(247,243,236,.82); font-size: 26rpx; line-height: 1.55; margin-top: 4rpx; }
-.lead { margin-top: 20rpx; }
-.panel { margin-top: -40rpx; position: relative; background: #F3EEE6; border-radius: 36rpx 36rpx 0 0; padding-top: 28rpx; }
-.quick { display: flex; padding: 16rpx 8rpx 8rpx; }
-.qi { flex: 1; display: flex; flex-direction: column; align-items: center; }
-.qimg { width: 96rpx; height: 96rpx; border-radius: 28rpx; }
-.ql { margin-top: 12rpx; font-size: 22rpx; color: #1C1915; }
-.qe { margin-top: 2rpx; font-size: 16rpx; letter-spacing: 1rpx; color: #A3988C; }
-.block { padding: 36rpx 36rpx 18rpx; }
-.block-title { display: block; font-size: 40rpx; font-weight: 500; margin-top: 8rpx; letter-spacing: 1rpx; }
-.block-row { display: flex; align-items: baseline; justify-content: space-between; }
-.block-meta, .block-more { color: #8A8175; font-size: 24rpx; }
-.banner { height: 380rpx; }
-.slide { position: relative; height: 380rpx; margin: 0 28rpx; border-radius: 28rpx; overflow: hidden; }
+.home { min-height: 100vh; background: #F2F2F7; padding-bottom: 48rpx; }
+.nav { padding-left: 44rpx; padding-bottom: 28rpx; }
+.brand-row { display: flex; align-items: center; gap: 16rpx; }
+.brand-logo { width: 64rpx; height: 64rpx; flex-shrink: 0; }
+.brand { color: #1D1D1F; font-size: 34rpx; font-weight: 600; letter-spacing: -0.5rpx; line-height: 1.2; }
+.brand-sub { margin-top: 4rpx; color: #86868B; font-size: 24rpx; line-height: 1.4; }
+.banner { height: 360rpx; }
+.slide { position: relative; height: 360rpx; margin: 0 16rpx; border-radius: 28rpx; overflow: hidden; }
 .slide-img, .slide-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.slide-shade { background: linear-gradient(180deg, rgba(16,14,12,0) 30%, rgba(16,14,12,.72) 100%); }
-.slide-copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 28rpx 32rpx 32rpx; color: #fff; }
-.slide-badge { font-size: 20rpx; letter-spacing: 2rpx; color: #1C1915; background: #E7D3AE; border-radius: 999rpx; padding: 4rpx 16rpx; }
-.slide-title { font-size: 36rpx; font-weight: 500; margin-top: 12rpx; }
-.slide-sub { font-size: 24rpx; color: rgba(255,255,255,.8); margin-top: 8rpx; line-height: 1.5; }
-.slide-idx { position: absolute; right: 24rpx; top: 24rpx; color: #fff; font-size: 20rpx; letter-spacing: 2rpx; background: rgba(20,16,12,.35); border-radius: 999rpx; padding: 6rpx 16rpx; }
-.loc { position: relative; height: 320rpx; margin: 0 28rpx 20rpx; border-radius: 28rpx; overflow: hidden; }
-.loc-img, .loc-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.loc-shade { background: linear-gradient(180deg, rgba(16,14,12,0) 28%, rgba(16,14,12,.7) 100%); }
-.loc-copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 28rpx 32rpx; color: #fff; }
-.loc-name { font-size: 34rpx; font-weight: 500; }
-.loc-addr, .loc-hours { font-size: 22rpx; color: rgba(255,255,255,.82); margin-top: 6rpx; }
-.stories { white-space: nowrap; height: 520rpx; padding-left: 28rpx; }
+.slide-shade { background: linear-gradient(180deg, rgba(0,0,0,0) 42%, rgba(0,0,0,.55) 100%); }
+.slide-copy { position: absolute; left: 0; right: 0; bottom: 0; padding: 28rpx 32rpx 48rpx; color: #fff; }
+.slide-title { font-size: 34rpx; font-weight: 600; letter-spacing: -0.5rpx; }
+.slide-sub { margin-top: 6rpx; font-size: 24rpx; color: rgba(255,255,255,.86); }
+.sheet {
+  margin: 14rpx 16rpx 0; padding: 28rpx 0 12rpx; background: #fff; border-radius: 28rpx;
+  box-shadow: 0 12rpx 32rpx rgba(0,0,0,.04); overflow: hidden;
+}
+.section-head { display: flex; align-items: baseline; justify-content: space-between; padding-right: 28rpx; }
+.section-title { display: block; padding: 0 28rpx 20rpx; color: #1D1D1F; font-size: 34rpx; font-weight: 600; letter-spacing: -0.5rpx; }
+.section-head .section-title { padding-bottom: 20rpx; }
+.more { color: #007AFF; font-size: 26rpx; }
+.quick { display: flex; flex-wrap: wrap; padding: 4rpx 8rpx 8rpx; }
+.qi { width: 25%; display: flex; flex-direction: column; align-items: center; margin-bottom: 24rpx; }
+.contact { position: relative; }
+.contact-hit { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; z-index: 2; }
+.qicon {
+  width: 104rpx; height: 104rpx; border-radius: 26rpx; overflow: hidden;
+  box-shadow: 0 10rpx 18rpx rgba(58, 54, 48, .16);
+}
+.qimg { width: 104rpx; height: 104rpx; display: block; }
+.ql { margin-top: 12rpx; font-size: 24rpx; color: #1D1D1F; }
+.places { display: flex; gap: 16rpx; padding: 0 24rpx 20rpx; }
+.place { width: 0; flex: 1; }
+.place-img { width: 100%; height: 180rpx; border-radius: 18rpx; display: block; background: #E5E5EA; }
+.place-name {
+  margin-top: 12rpx; font-size: 24rpx; font-weight: 500; color: #1D1D1F; line-height: 1.35;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.place-addr { margin-top: 4rpx; font-size: 22rpx; color: #86868B; }
+.stories-clip { width: 100%; overflow: hidden; }
+.stories { width: 100%; height: 400rpx; white-space: nowrap; }
+.stories-row { display: inline-flex; padding: 0 24rpx 16rpx; }
 .story {
-  display: inline-block; width: 460rpx; height: 500rpx; margin-right: 20rpx;
-  background: #FFFcf8; border-radius: 28rpx; overflow: hidden; vertical-align: top; white-space: normal;
-  border: 1rpx solid rgba(28,25,21,.06);
+  width: 400rpx; margin-right: 16rpx; flex-shrink: 0; white-space: normal;
+  background: #F5F5F7; border-radius: 20rpx; overflow: hidden;
 }
-.story-img { width: 460rpx; height: 240rpx; display: block; }
-.story-body { padding: 24rpx 24rpx 0; }
+.story:last-child { margin-right: 0; }
+.story-img { width: 400rpx; height: 220rpx; display: block; background: #E5E5EA; }
 .story-title {
-  font-size: 28rpx; line-height: 1.6; height: 134rpx; overflow: hidden;
+  padding: 16rpx 18rpx 0; font-size: 26rpx; font-weight: 500; color: #1D1D1F; line-height: 1.4;
+  height: 72rpx; overflow: hidden;
 }
-.story-foot { display: flex; align-items: center; gap: 12rpx; margin-top: 8rpx; }
-.story-badge { font-size: 20rpx; color: #6F6252; background: #F3EEE6; border-radius: 999rpx; padding: 4rpx 14rpx; }
-.story-who { font-size: 22rpx; color: #8A8175; }
-.news { margin: 0 28rpx; background: #FFFcf8; border-radius: 28rpx; overflow: hidden; border: 1rpx solid rgba(28,25,21,.06); }
-.nitem { display: flex; gap: 20rpx; padding: 22rpx; }
-.nitem + .nitem { border-top: 1rpx solid #F0EBE3; }
-.nimg { width: 148rpx; height: 112rpx; border-radius: 16rpx; flex-shrink: 0; }
-.nbody { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-.ntitle { font-size: 28rpx; line-height: 1.45; margin-bottom: 8rpx; }
-.colophon { padding: 48rpx 36rpx 36rpx; }
-.colo-cn { display: block; margin-top: 10rpx; color: #8A8175; font-size: 24rpx; }
+.story-who { padding: 6rpx 18rpx 16rpx; font-size: 22rpx; color: #86868B; }
+.news { margin: 0 8rpx 12rpx; }
+.nitem { display: flex; gap: 20rpx; align-items: center; padding: 22rpx 20rpx; }
+.nitem + .nitem { border-top: 1rpx solid #F2F2F7; }
+.nbody { flex: 1; min-width: 0; }
+.ntitle { font-size: 28rpx; font-weight: 500; color: #1D1D1F; line-height: 1.4; }
+.ndate { margin-top: 8rpx; font-size: 22rpx; color: #86868B; }
+.nimg { width: 128rpx; height: 96rpx; border-radius: 16rpx; flex-shrink: 0; background: #E5E5EA; }
 </style>

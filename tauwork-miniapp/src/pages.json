@@ -1,17 +1,22 @@
 {
   "pages": [
-    { "path": "pages/index/index", "style": { "navigationStyle": "custom", "navigationBarTextStyle": "white", "enableShareAppMessage": true } },
+    { "path": "pages/index/index", "style": { "navigationStyle": "custom", "navigationBarTextStyle": "black", "backgroundColor": "#F5F5F7", "enableShareAppMessage": true, "usingComponents": { "cell": "plugin://contactPlugin/cell" } } },
     { "path": "pages/space/space", "style": { "navigationBarTitleText": "社区" } },
-    { "path": "pages/svc/svc", "style": { "navigationBarTitleText": "服务" } },
-    { "path": "pages/svc/detail", "style": { "navigationBarTitleText": "服务详情" } },
+    { "path": "pages/svc/svc", "style": { "navigationBarTitleText": "服务", "backgroundColor": "#F2F2F7" } },
+    { "path": "pages/svc/consult", "style": { "navigationBarTitleText": "免费咨询", "backgroundColor": "#F2F2F7" } },
+    { "path": "pages/svc/detail", "style": { "navigationBarTitleText": "服务详情", "backgroundColor": "#F2F2F7", "usingComponents": { "cell": "plugin://contactPlugin/cell" } } },
     { "path": "pages/svc/book", "style": { "navigationBarTitleText": "预约咨询" } },
     { "path": "pages/goods/list", "style": { "navigationBarTitleText": "伴手礼" } },
     { "path": "pages/goods/detail", "style": { "navigationBarTitleText": "商品详情" } },
     { "path": "pages/me/me", "style": { "navigationBarTitleText": "我的" } },
-    { "path": "pages/space/store", "style": { "navigationBarTitleText": "可预订" } },
+    { "path": "pages/space/store", "style": { "navigationBarTitleText": "可预订", "backgroundColor": "#F2F2F7" } },
     { "path": "pages/space/detail", "style": { "navigationBarTitleText": "预订" } },
     { "path": "pages/me/bookings", "style": { "navigationBarTitleText": "我的预订" } },
-    { "path": "pages/news/news", "style": { "navigationBarTitleText": "公告资讯", "enableShareAppMessage": true, "enableShareTimeline": true } },
+    { "path": "pages/me/orders", "style": { "navigationBarTitleText": "我的订单", "backgroundColor": "#F2F2F7" } },
+    { "path": "pages/me/business", "style": { "navigationBarTitleText": "我的业务", "backgroundColor": "#F2F2F7" } },
+    { "path": "pages/me/business-detail", "style": { "navigationBarTitleText": "公司注册进度", "backgroundColor": "#F2F2F7" } },
+    { "path": "pages/me/order", "style": { "navigationBarTitleText": "订单详情", "backgroundColor": "#F2F2F7" } },
+    { "path": "pages/news/news", "style": { "navigationBarTitleText": "最新资讯", "enableShareAppMessage": true, "enableShareTimeline": true } },
     { "path": "pages/news/detail", "style": { "navigationBarTitleText": "资讯详情", "enableShareAppMessage": true, "enableShareTimeline": true } },
     { "path": "pages/story/list", "style": { "navigationBarTitleText": "客户故事", "enableShareAppMessage": true, "enableShareTimeline": true } },
     { "path": "pages/story/detail", "style": { "navigationBarTitleText": "客户故事", "enableShareAppMessage": true, "enableShareTimeline": true } },
@@ -25,6 +30,12 @@
     { "path": "pages/me/partner-customers", "style": { "navigationBarTitleText": "我的客户" } },
     { "path": "pages/me/partner-join", "style": { "navigationBarTitleText": "成为合伙人" } }
   ],
+  "plugins": {
+    "contactPlugin": {
+      "version": "1.4.3",
+      "provider": "wx104a1a20c3f81ec2"
+    }
+  },
   "globalStyle": {
     "navigationBarBackgroundColor": "#F3EEE6",
     "navigationBarTextStyle": "black",
@@ -32,9 +43,9 @@
   },
   "tabBar": {
     "custom": false,
-    "color": "#A3988C",
-    "selectedColor": "#1C1915",
-    "backgroundColor": "#FBF8F3",
+    "color": "#8E8E93",
+    "selectedColor": "#1D1D1F",
+    "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       { "pagePath": "pages/index/index", "text": "首页", "iconPath": "static/tabbar/home.png", "selectedIconPath": "static/tabbar/home-on.png" },

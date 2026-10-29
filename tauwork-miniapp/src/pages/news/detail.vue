@@ -33,7 +33,7 @@ export default {
   onShareAppMessage() {
     const n = this.n || {}
     return {
-      title: n.title || '九千善 · 公告资讯',
+      title: n.title || '九千善 · 最新资讯',
       path: `/pages/news/detail?id=${n.id || this.id || ''}`,
       imageUrl: this.shareImage()
     }
@@ -41,7 +41,7 @@ export default {
   onShareTimeline() {
     const n = this.n || {}
     return {
-      title: n.title || '九千善 · 公告资讯',
+      title: n.title || '九千善 · 最新资讯',
       query: `id=${n.id || this.id || ''}`,
       imageUrl: this.shareImage()
     }

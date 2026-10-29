@@ -4,6 +4,7 @@ import com.abos.server.common.enums.ErrorCode;
 import com.abos.server.common.exception.BizException;
 import com.abos.server.module.booking.service.SpaceBookingService;
 import com.abos.server.module.goods.service.GoodsOrderService;
+import com.abos.server.module.svcorder.service.SvcOrderService;
 import com.abos.server.module.order.entity.Order;
 import com.abos.server.module.order.mapper.OrderMapper;
 import com.abos.server.module.order.pay.PayClient;
@@ -29,6 +30,7 @@ public class PayNotifyController {
     private final PayClient payClient;
     private final SpaceBookingService bookingService;
     private final GoodsOrderService goodsOrderService;
+    private final SvcOrderService svcOrderService;
     private final OrderMapper orderMapper;
 
     @PostMapping("/notify/wx")
@@ -42,6 +44,8 @@ public class PayNotifyController {
             }
             if ("GOODS".equals(order.getType())) {
                 goodsOrderService.handlePaySuccess(orderNo);
+            } else if ("SERVICE".equals(order.getType())) {
+                svcOrderService.handlePaySuccess(orderNo);
             } else {
                 bookingService.handlePaySuccess(orderNo);
             }

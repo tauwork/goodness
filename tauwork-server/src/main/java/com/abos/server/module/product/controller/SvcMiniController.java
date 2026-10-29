@@ -1,8 +1,11 @@
 package com.abos.server.module.product.controller;
 
 import com.abos.server.common.result.Result;
+import com.abos.server.module.product.dto.ConsultCatalogVO;
+import com.abos.server.module.product.dto.ConsultSubmitDTO;
 import com.abos.server.module.product.entity.ProductCategory;
 import com.abos.server.module.product.entity.SvcProduct;
+import com.abos.server.module.product.service.ConsultCatalogService;
 import com.abos.server.module.product.service.ProductCategoryService;
 import com.abos.server.module.product.service.SvcProductService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ public class SvcMiniController {
 
     private final SvcProductService productService;
     private final ProductCategoryService categoryService;
+    private final ConsultCatalogService consultCatalogService;
 
     @GetMapping("/category")
     public Result<List<ProductCategory>> categories() {
@@ -37,5 +41,18 @@ public class SvcMiniController {
     @GetMapping("/product/{id}")
     public Result<SvcProduct> detail(@PathVariable Long id) {
         return Result.ok(productService.getById(id));
+    }
+
+    /** 1v1 咨询：服务大类与对接顾问 */
+    @GetMapping("/consult")
+    public Result<ConsultCatalogVO> consult() {
+        return Result.ok(consultCatalogService.catalog());
+    }
+
+    /** 1v1 咨询留资，无需登录 */
+    @PostMapping("/consult")
+    public Result<Void> consult(@RequestBody ConsultSubmitDTO dto) {
+        consultCatalogService.submit(dto);
+        return Result.ok();
     }
 }

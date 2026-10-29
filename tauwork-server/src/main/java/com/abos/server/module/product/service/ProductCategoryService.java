@@ -8,6 +8,7 @@ import com.abos.server.module.product.entity.SvcProduct;
 import com.abos.server.module.product.mapper.ProductAttrDefMapper;
 import com.abos.server.module.product.mapper.ProductCategoryMapper;
 import com.abos.server.module.product.mapper.SvcProductMapper;
+import com.abos.server.module.team.mapper.ConsultantMapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class ProductCategoryService {
     private final ProductCategoryMapper categoryMapper;
     private final ProductAttrDefMapper attrDefMapper;
     private final SvcProductMapper productMapper;
+    private final ConsultantMapper consultantMapper;
 
     /* ---------------- 分类 ---------------- */
 
@@ -61,6 +63,7 @@ public class ProductCategoryService {
         category.setId(null);
         if (category.getStatus() == null) category.setStatus(1);
         if (category.getSortNo() == null) category.setSortNo(0);
+        ensureConsultant(category.getConsultantId());
         categoryMapper.insert(category);
         return category;
     }
@@ -69,8 +72,15 @@ public class ProductCategoryService {
         if (category.getId() == null || categoryMapper.selectById(category.getId()) == null) {
             throw new BizException(ErrorCode.NOT_FOUND, "分类不存在");
         }
+        ensureConsultant(category.getConsultantId());
         categoryMapper.updateById(category);
         return categoryMapper.selectById(category.getId());
+    }
+
+    private void ensureConsultant(Long consultantId) {
+        if (consultantId != null && consultantMapper.selectById(consultantId) == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "顾问不存在");
+        }
     }
 
     public void disable(Long id) {

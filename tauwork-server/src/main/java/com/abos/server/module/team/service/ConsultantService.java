@@ -86,6 +86,8 @@ public class ConsultantService {
         row.setTitle(trim(dto.getTitle()));
         row.setValueService(trim(dto.getValueService()));
         row.setPersonality(trim(dto.getPersonality()));
+        row.setWechat(trim(dto.getWechat()));
+        row.setPhone(trim(dto.getPhone()));
         row.setCommunityId(dto.getCommunityId());
     }
 

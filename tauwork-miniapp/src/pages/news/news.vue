@@ -2,7 +2,7 @@
   <view class="page">
     <view class="intro">
       <text class="kicker">JOURNAL</text>
-      <view class="intro-title">公告资讯</view>
+      <view class="intro-title">最新资讯</view>
     </view>
     <view class="item" v-for="(n, i) in list" :key="n.id" @tap="go(n.id)">
       <image class="cover" :src="n.image" mode="aspectFill" />

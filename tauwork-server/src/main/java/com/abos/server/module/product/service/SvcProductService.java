@@ -12,6 +12,7 @@ import com.abos.server.module.product.entity.ProductCategory;
 import com.abos.server.module.product.entity.SvcProduct;
 import com.abos.server.module.product.mapper.ProductCategoryMapper;
 import com.abos.server.module.product.mapper.SvcProductMapper;
+import com.abos.server.module.team.mapper.ConsultantMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -31,6 +32,7 @@ public class SvcProductService {
     private final CommunityProductMapper communityProductMapper;
     private final OrderMapper orderMapper;
     private final SvcBookingMapper svcBookingMapper;
+    private final ConsultantMapper consultantMapper;
 
     public IPage<SvcProduct> page(long page, long size, String prodType, Long categoryId,
                                   Integer onSale, String keyword) {
@@ -136,6 +138,11 @@ public class SvcProductService {
         }
         if (product.getSortNo() == null) {
             product.setSortNo(0);
+        }
+        if (!SvcProduct.TYPE_SERVICE.equals(product.getProdType())) {
+            product.setConsultantId(null);
+        } else if (product.getConsultantId() != null && consultantMapper.selectById(product.getConsultantId()) == null) {
+            throw new BizException(ErrorCode.BAD_REQUEST, "顾问不存在");
         }
         if (SvcProduct.TYPE_GOODS.equals(product.getProdType())) {
             product.setPriceMode("FIXED");
